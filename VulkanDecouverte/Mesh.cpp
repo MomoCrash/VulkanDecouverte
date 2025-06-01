@@ -17,9 +17,9 @@ Mesh::Mesh(RenderWindow& window, MeshData const& dMesh) : m_vertexBuffer(nullptr
             stagingBuffer, stagingBufferMemory, vSize);
 
     void* data;
-    vkMapMemory(window.getDevice(), stagingBufferMemory, 0, vSize, 0, &data);
+    vkMapMemory(Application::getInstance()->getDevice(), stagingBufferMemory, 0, vSize, 0, &data);
     memcpy(data, dMesh.vertices.data(), vSize);
-    vkUnmapMemory(window.getDevice(), stagingBufferMemory);
+    vkUnmapMemory(Application::getInstance()->getDevice(), stagingBufferMemory);
 
     window.createBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -29,9 +29,9 @@ Mesh::Mesh(RenderWindow& window, MeshData const& dMesh) : m_vertexBuffer(nullptr
 
     VkDeviceSize iSize = sizeof(dMesh.indices[0]) * dMesh.indices.size();
     
-    vkMapMemory(window.getDevice(), stagingBufferMemory, 0, iSize, 0, &data);
+    vkMapMemory(Application::getInstance()->getDevice(), stagingBufferMemory, 0, iSize, 0, &data);
     memcpy(data, dMesh.indices.data(), iSize);
-    vkUnmapMemory(window.getDevice(), stagingBufferMemory);
+    vkUnmapMemory(Application::getInstance()->getDevice(), stagingBufferMemory);
 
     window.createBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -39,19 +39,19 @@ Mesh::Mesh(RenderWindow& window, MeshData const& dMesh) : m_vertexBuffer(nullptr
 
     window.copyBuffer(stagingBuffer, m_indexBuffer, iSize);
 
-    vkDestroyBuffer(window.getDevice(), stagingBuffer, nullptr);
-    vkFreeMemory(window.getDevice(), stagingBufferMemory, nullptr);
+    vkDestroyBuffer(Application::getInstance()->getDevice(), stagingBuffer, nullptr);
+    vkFreeMemory(Application::getInstance()->getDevice(), stagingBufferMemory, nullptr);
     
 }
 
 Mesh::~Mesh()
 {
 
-    vkDestroyBuffer(m_window->getDevice(), m_indexBuffer, nullptr);
-    vkFreeMemory(m_window->getDevice(), m_indexBufferUploader, nullptr);
+    vkDestroyBuffer(Application::getInstance()->getDevice(), m_indexBuffer, nullptr);
+    vkFreeMemory(Application::getInstance()->getDevice(), m_indexBufferUploader, nullptr);
     
-    vkDestroyBuffer(m_window->getDevice(), m_vertexBuffer, nullptr);
-    vkFreeMemory(m_window->getDevice(), m_vertexUploader, nullptr);
+    vkDestroyBuffer(Application::getInstance()->getDevice(), m_vertexBuffer, nullptr);
+    vkFreeMemory(Application::getInstance()->getDevice(), m_vertexUploader, nullptr);
     
 }
 

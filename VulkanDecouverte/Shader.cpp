@@ -123,7 +123,7 @@ Shader::Shader(RenderWindow& window, std::string vshaderPath, std::string fshade
     pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
     pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
-    if (vkCreatePipelineLayout(m_window->getDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(Application::getInstance()->getDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     }
 
@@ -145,17 +145,18 @@ Shader::Shader(RenderWindow& window, std::string vshaderPath, std::string fshade
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
     pipelineInfo.basePipelineIndex = -1; // Optional
 
-    if (vkCreateGraphicsPipelines(m_window->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(Application::getInstance()->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
     
-    vkDestroyShaderModule(m_window->getDevice(), fragShaderModule, nullptr);
-    vkDestroyShaderModule(m_window->getDevice(), vertShaderModule, nullptr);
+    vkDestroyShaderModule(Application::getInstance()->getDevice(), fragShaderModule, nullptr);
+    vkDestroyShaderModule(Application::getInstance()->getDevice(), vertShaderModule, nullptr);
 }
 
 Shader::~Shader()
 {
-    vkDestroyPipeline(m_window->getDevice(), m_graphicsPipeline, nullptr);
+    vkDestroyPipeline(Application::getInstance()->getDevice(), m_graphicsPipeline, nullptr);
+    vkDestroyPipelineLayout(Application::getInstance()->getDevice(), m_pipelineLayout, nullptr);
 }
 
 std::vector<char> Shader::readFile(const std::string& filename)
@@ -186,7 +187,7 @@ VkShaderModule Shader::createShaderModule(const std::vector<char>& code)
     createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
     
     VkShaderModule shaderModule;
-    if (vkCreateShaderModule(m_window->getDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+    if (vkCreateShaderModule(Application::getInstance()->getDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
         throw std::runtime_error("failed to create shader module!");
     }
 

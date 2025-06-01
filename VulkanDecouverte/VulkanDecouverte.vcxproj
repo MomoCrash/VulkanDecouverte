@@ -158,7 +158,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Device.cpp" />
+    <ClCompile Include="Application.cpp" />
+    <ClCompile Include="UIHandler.cpp" />
     <ClCompile Include="libs\im_gui\imgui.cpp">
       <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -700,8 +701,9 @@
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Device.h" />
+    <ClInclude Include="Application.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="UIHandler.h" />
     <ClInclude Include="libs\im_gui\imconfig.h" />
     <ClInclude Include="libs\im_gui\imgui.h" />
     <ClInclude Include="libs\im_gui\imgui_impl_glfw.h" />

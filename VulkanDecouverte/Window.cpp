@@ -3,9 +3,7 @@
 Window::Window(const char* title, const int width, const int height)
     : m_title(title), m_width(width), m_height(height)
 {
-
-    glfwInit();
-
+    
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
@@ -17,7 +15,6 @@ Window::~Window()
 {
     glfwDestroyWindow(m_window);
 
-    glfwTerminate();
 }
 
 GLFWwindow* Window::GetWindow()

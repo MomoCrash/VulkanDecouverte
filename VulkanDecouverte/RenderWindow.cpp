@@ -617,7 +617,6 @@ VkSurfaceKHR& RenderWindow::getSurface()
 
 void RenderWindow::update()
 {
-    glfwPollEvents();
 
     // Update Uniform Bffer
     static auto startTime = std::chrono::high_resolution_clock::now();

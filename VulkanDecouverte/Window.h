@@ -10,6 +10,7 @@ public:
 
 	GLFWwindow* GetWindow();
 
+
 protected:
 
 	GLFWwindow* m_window;

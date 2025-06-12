@@ -1,11 +1,28 @@
-﻿#include "UIHandler.h"
+﻿#include "GuiHandler.h"
 
 #include "Application.h"
 #include "RenderWindow.h"
 
-UIHandler::UIHandler()
+GuiHandler::GuiHandler()
 {
-    //1: create descriptor pool for IMGUI
+
+}
+
+GuiHandler::~GuiHandler()
+{
+	for (auto pool : m_imguiPools)
+	{
+		vkDestroyDescriptorPool(Application::getInstance()->getDevice(), pool, nullptr);
+	}
+}
+
+int GuiHandler::inject(RenderWindow* window)
+{
+
+	int index = m_imguiPools.size();
+	m_imguiPools.push_back(VkDescriptorPool());
+
+	//1: create descriptor pool for IMGUI
 	// the size of the pool is very oversize, but it's copied from imgui demo itself.
 	VkDescriptorPoolSize pool_sizes[] =
 	{
@@ -29,35 +46,28 @@ UIHandler::UIHandler()
 	pool_info.poolSizeCount = std::size(pool_sizes);
 	pool_info.pPoolSizes = pool_sizes;
     
-	if (vkCreateDescriptorPool(Application::getInstance()->getDevice(), &pool_info, nullptr, &m_imguiPool) != VK_SUCCESS)
+	if (vkCreateDescriptorPool(Application::getInstance()->getDevice(), &pool_info, nullptr, &m_imguiPools[index]) != VK_SUCCESS)
 	{
-	    throw std::runtime_error("failed to create descriptor pool");
+		throw std::runtime_error("failed to create descriptor pool");
 	}
 
-
 	// 2: initialize imgui library
-    IMGUI_CHECKVERSION();
+	IMGUI_CHECKVERSION();
 	//this initializes the core structures of imgui
-	ImGui::CreateContext();
-    
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+	m_imguiContexts.push_back(ImGui::CreateContext());
 
-    ImGui::StyleColorsDark();
+	ImGui::SetCurrentContext(m_imguiContexts[index]);
+	
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	if (m_imguiContexts.size() > 1)
+	{
+		io.FontDefault = m_imguiContexts[0]->Font;
+	} 
 
-}
-
-UIHandler::~UIHandler()
-{
-	vkDestroyDescriptorPool(Application::getInstance()->getDevice(), m_imguiPool, nullptr);
-}
-
-void UIHandler::inject(RenderWindow* window)
-{
-	//this initializes imgui for SDL
-	ImGui_ImplGlfw_InitForVulkan(window->GetWindow(), true);
-
+	ImGui::StyleColorsDark();
+	
+	ImGui_ImplGlfw_InitForVulkan(window->GetWindow(), false);
     
 	QueueFamilyIndices queueFamilyIndices = Application::getInstance()->findQueueFamilies(Application::getInstance()->getPhysicalDevice(), window->getSurface());
     
@@ -69,7 +79,7 @@ void UIHandler::inject(RenderWindow* window)
 	init_info.QueueFamily = queueFamilyIndices.graphicsFamily.value();
 	init_info.Queue = Application::getInstance()->getGraphicQueue();
 	init_info.PipelineCache = nullptr;
-	init_info.DescriptorPool = m_imguiPool;
+	init_info.DescriptorPool = m_imguiPools[index];
 	init_info.RenderPass = window->getRenderPass();
 	init_info.Subpass = 0;
 	init_info.MinImageCount = 2;
@@ -78,4 +88,19 @@ void UIHandler::inject(RenderWindow* window)
 	init_info.Allocator = nullptr;
 	init_info.CheckVkResultFn = nullptr;
 	ImGui_ImplVulkan_Init(&init_info);
+
+	return index;
+}
+
+void GuiHandler::remove(int index)
+{
+	vkDestroyDescriptorPool(Application::getInstance()->getDevice(), m_imguiPools[index], nullptr);
+	m_imguiPools.at(index) = VK_NULL_HANDLE;
+	m_imguiPools.erase (m_imguiPools.begin()+index);
+	m_imguiContexts.erase(m_imguiContexts.begin()+index);
+}
+
+void GuiHandler::setContext(int index)
+{
+	ImGui::SetCurrentContext(m_imguiContexts.at(index));
 }

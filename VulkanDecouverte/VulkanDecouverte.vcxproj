@@ -159,7 +159,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
-    <ClCompile Include="UIHandler.cpp" />
+    <ClCompile Include="libs\nodeflow\src\ImNodeFlow.cpp" />
+    <ClCompile Include="nodes\NodeEditor.cpp" />
+    <ClCompile Include="GuiHandler.cpp" />
     <ClCompile Include="libs\im_gui\imgui.cpp">
       <RuntimeLibrary>MultiThreadedDebugDll</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -703,7 +705,16 @@
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="framework.h" />
-    <ClInclude Include="UIHandler.h" />
+    <ClInclude Include="libs\nodeflow\include\ImNodeFlow.h" />
+    <ClInclude Include="libs\nodeflow\src\context_wrapper.h" />
+    <ClInclude Include="libs\nodeflow\src\imgui_bezier_math.h" />
+    <ClInclude Include="libs\nodeflow\src\imgui_bezier_math.inl" />
+    <ClInclude Include="libs\nodeflow\src\imgui_extra_math.h" />
+    <ClInclude Include="libs\nodeflow\src\imgui_extra_math.inl" />
+    <ClInclude Include="libs\nodeflow\src\ImNodeFlow.inl" />
+    <ClInclude Include="nodes\node.hpp" />
+    <ClInclude Include="nodes\NodeEditor.h" />
+    <ClInclude Include="GuiHandler.h" />
     <ClInclude Include="libs\im_gui\imconfig.h" />
     <ClInclude Include="libs\im_gui\imgui.h" />
     <ClInclude Include="libs\im_gui\imgui_impl_glfw.h" />

@@ -1,8 +1,15 @@
 #pragma once
 
+#include "defines.h"
+
+#define IMGUI_DEFINE_MATH_OPERATORS
+
 #include "libs/im_gui/imgui.h"
+#include "libs/im_gui/imgui_internal.h"
 #include "libs/im_gui/imgui_impl_glfw.h"
 #include "libs/im_gui/imgui_impl_vulkan.h"
+
+#include "libs/nodeflow/include/ImNodeFlow.h"
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_INCLUDE_VULKAN

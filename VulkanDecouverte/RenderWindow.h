@@ -60,23 +60,24 @@ public:
 	void display();
 	
 private:
-// 	VkInstance m_instance; // Vulkan Global Instance
-// 	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE; // Graphic Card Used
-//
-// 	VkDebugUtilsMessengerEXT m_debugMessenger; // Debugger
-//
-// #ifdef NDEBUG
-// 	bool m_enableValidationLayers = false;
-// #else
-// 	bool m_enableValidationLayers = true;
-// #endif
-//
-// 	bool rateDeviceSuitability(VkPhysicalDevice device);
-// 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+	// All of this come from an older version of the app when Application class don't exist now all of this is global context of window
+	// 	VkInstance m_instance; // Vulkan Global Instance
+	// 	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE; // Graphic Card Used
+	//
+	// 	VkDebugUtilsMessengerEXT m_debugMessenger; // Debugger
+	//
+	// #ifdef NDEBUG
+	// 	bool m_enableValidationLayers = false;
+	// #else
+	// 	bool m_enableValidationLayers = true;
+	// #endif
+	//
+	// 	bool rateDeviceSuitability(VkPhysicalDevice device);
+	// 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 	// 	std::vector<const char*> getRequiredExtensions();
-	// bool checkValidationSupport();
+	//  bool checkValidationSupport();
 
-	// Reference to the device
+	// Reference to the device (Replace code on top)
 	VkDevice const* m_device;
 
 	// Main device element

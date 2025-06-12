@@ -159,6 +159,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
+    <ClCompile Include="GeometryFactory.cpp" />
     <ClCompile Include="libs\nodeflow\src\ImNodeFlow.cpp" />
     <ClCompile Include="nodes\NodeEditor.cpp" />
     <ClCompile Include="GuiHandler.cpp" />
@@ -704,7 +705,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
+    <ClInclude Include="defines.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="GeometryFactory.h" />
     <ClInclude Include="libs\nodeflow\include\ImNodeFlow.h" />
     <ClInclude Include="libs\nodeflow\src\context_wrapper.h" />
     <ClInclude Include="libs\nodeflow\src\imgui_bezier_math.h" />
@@ -734,6 +737,9 @@
     <Content Include="shaders\compile.bat" />
     <Content Include="shaders\shader.frag" />
     <Content Include="shaders\shader.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="geometries\" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

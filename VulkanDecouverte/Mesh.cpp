@@ -2,13 +2,18 @@
 
 #include "RenderWindow.h"
 
+Vertex::Vertex(): position(0, 0, 0), normal(0, 0, 0), texCoords(0, 0) {}
+
+Vertex::Vertex(float x, float y, float z, float xN, float yN, float zN, float xT, float yT)
+    : position(x, y, z), normal(xN, yN, zN), texCoords(xT, yT) {}
+
 Mesh::Mesh(RenderWindow& window, MeshData const& dMesh) : m_vertexBuffer(nullptr)
 {
     
     m_window = &window;
     m_meshData = dMesh;
 
-    uint64_t vSize = sizeof(dMesh.vertices[0]) * dMesh.vertices.size();
+    uint64_t vSize = sizeof(dMesh.Vertices[0]) * dMesh.Vertices.size();
 
     VkBuffer stagingBuffer = nullptr;
     VkDeviceMemory stagingBufferMemory = nullptr;
@@ -18,7 +23,7 @@ Mesh::Mesh(RenderWindow& window, MeshData const& dMesh) : m_vertexBuffer(nullptr
 
     void* data;
     vkMapMemory(Application::getInstance()->getDevice(), stagingBufferMemory, 0, vSize, 0, &data);
-    memcpy(data, dMesh.vertices.data(), vSize);
+    memcpy(data, dMesh.Vertices.data(), vSize);
     vkUnmapMemory(Application::getInstance()->getDevice(), stagingBufferMemory);
 
     window.createBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -27,10 +32,10 @@ Mesh::Mesh(RenderWindow& window, MeshData const& dMesh) : m_vertexBuffer(nullptr
 
     window.copyBuffer(stagingBuffer, m_vertexBuffer, vSize);
 
-    VkDeviceSize iSize = sizeof(dMesh.indices[0]) * dMesh.indices.size();
+    VkDeviceSize iSize = sizeof(dMesh.Indices[0]) * dMesh.Indices.size();
     
     vkMapMemory(Application::getInstance()->getDevice(), stagingBufferMemory, 0, iSize, 0, &data);
-    memcpy(data, dMesh.indices.data(), iSize);
+    memcpy(data, dMesh.Indices.data(), iSize);
     vkUnmapMemory(Application::getInstance()->getDevice(), stagingBufferMemory);
 
     window.createBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
@@ -67,10 +72,10 @@ VkBuffer const& Mesh::getIndexBuffer() const
 
 std::vector<Vertex> const& Mesh::getVertices() const
 {
-    return m_meshData.vertices;
+    return m_meshData.Vertices;
 }
 
 uint32_t Mesh::getIndexCount() const
 {
-    return m_meshData.indices.size();
+    return m_meshData.Indices.size();
 }

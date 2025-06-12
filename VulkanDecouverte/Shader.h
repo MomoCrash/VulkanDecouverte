@@ -6,8 +6,6 @@ class RenderWindow;
 
 class Shader
 {
-    RenderWindow* m_window;
-    
     VkPipelineLayout m_pipelineLayout;
     VkPipeline m_graphicsPipeline;
 public:
@@ -18,4 +16,6 @@ public:
 
     VkPipeline& getPipeline();
     VkPipelineLayout& getPipelineLayout();
+
+    static const inline string SHADER_FOLDER = "shaders\\";
 };

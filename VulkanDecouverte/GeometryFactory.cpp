@@ -6,7 +6,7 @@
 GeometryFactory::GeometryFactory()
 {
 	
-	mPrimitives[Primitive::CUBE] = Primitive(CreateCube(1, 1, 1));
+	mPrimitives.try_emplace(Primitive::CUBE, Primitive(CreateCube(1, 1, 1)));
 	
 }
 
@@ -25,12 +25,18 @@ GeometryFactory::~GeometryFactory()
 	
 }
 
+GeometryFactory& GeometryFactory::getInstance()
+{
+	static GeometryFactory instance;
+	return instance;
+}
+
 MeshData* GeometryFactory::LoadOrGetMeshFromFile(std::wstring path, bool invertV)
 {
 
-	if (mLoadedMesh.contains(path))
+	if (getInstance().mLoadedMesh.contains(path))
 	{
-		return mLoadedMesh.at(path);
+		return getInstance().mLoadedMesh.at(path);
 	}
 
 	MeshData* data = new MeshData();
@@ -133,7 +139,12 @@ MeshData* GeometryFactory::LoadOrGetMeshFromFile(std::wstring path, bool invertV
 
 MeshData* GeometryFactory::GetPrimitive(Primitive::Type primitiveType)
 {
-	return mPrimitives[primitiveType].Mesh;
+	if (!getInstance().mPrimitives.contains(primitiveType))
+	{
+		std::cout << "Primitive " << primitiveType << " not found" << std::endl;
+		return new MeshData();
+	}
+	return getInstance().mPrimitives.at(primitiveType).Mesh;
 }
 
 MeshData* GeometryFactory::CreateCube(float width, float height, float depth)

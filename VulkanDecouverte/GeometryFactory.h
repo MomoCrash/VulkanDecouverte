@@ -4,13 +4,14 @@
 #include "Mesh.h"
 
 struct Primitive {
-    enum Type
+
+    enum Type : int8
     {
         CUBE,
 
         PRIMITIVE_COUNT
     };
-
+    
     Primitive(MeshData* mesh) : Mesh(mesh) {}
     
     MeshData* Mesh;
@@ -22,15 +23,18 @@ public:
     GeometryFactory();
     ~GeometryFactory();
 
-    [[nodiscard]] MeshData* LoadOrGetMeshFromFile(std::wstring path, bool invertV);
-    [[nodiscard]] MeshData* GetPrimitive(Primitive::Type);
-    [[nodiscard]] MeshData* CreateCube(float width, float height, float depth);
+    static GeometryFactory& getInstance();
+
+    [[nodiscard]] static MeshData* GetPrimitive(Primitive::Type);
+    
+    [[nodiscard]] static MeshData* LoadOrGetMeshFromFile(std::wstring path, bool invertV);
+    [[nodiscard]] static MeshData* CreateCube(float width, float height, float depth);
 
     static const inline wstring GEOMETRIES_FOLDER = L"geometries\\";
 
 private :
 
-    std::map<wstring, MeshData*> mLoadedMesh;
-    std::map<Primitive::Type, Primitive> mPrimitives;
+    std::map<wstring, MeshData*> mLoadedMesh = {};
+    std::map<int8, Primitive> mPrimitives = {};
 
 };

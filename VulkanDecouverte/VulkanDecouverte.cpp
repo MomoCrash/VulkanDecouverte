@@ -1,11 +1,14 @@
 #include <Windows.h>
 
 #include "framework.h"
+#include "GeometryFactory.h"
 #include "Mesh.h"
 #include "Profiler.h"
 #include "RenderObject.h"
 #include "RenderWindow.h"
 #include "GuiHandler.h"
+#include "RenderPipeline.h"
+#include "Shader.h"
 #include "nodes/NodeEditor.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nCmdShow)
@@ -22,16 +25,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     
     Profiler profiler;
 
-    Mesh mesh(window, MeshData::Cube());
+    Mesh mesh(window, GeometryFactory::GetPrimitive(Primitive::CUBE));
 
     RenderObject object(&mesh);
-    Shader shader(window, "shaders/vert.spv", "shaders/frag.spv");
+    Shader sFragment("frag.spv", Shader::FRAGMENT);
+    Shader sVertex("vert.spv", Shader::VERTEX);
+
+    RenderPipeline render({ &sFragment, &sVertex}, window);
     
-    mat4 model = mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 1.0f, 0.0f));
-    
-    mat4 model2 = mat4(1.0f);
-    model2 = glm::translate(model2, glm::vec3(0.0f, 0.0f, 0.0f));
 
     NodeEditor* editor = new NodeEditor(&ui);
     bool isNewWindow = false;
@@ -92,7 +93,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
                 ImGui::SliderFloat("float", &f, -1.0f, 1.0f);
                 if (ImGui::Button("Move forward"))
                 {
-                    model2 = glm::translate(model2, glm::vec3(f, 0.0f, 0.0f));
+                    object.setTransform(translate(object.getTransform(), vec3(f, 0.0f, 0.0f)));
                     counter++;
                 }
                 ImGui::SameLine();
@@ -101,15 +102,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
                 ImGui::End();
                 
             }
-    
-            //window.draw(object, shader, model);
-            //window.draw(object, shader, model2);
 
             ImGui::Render();
             ImDrawData* draw_data = ImGui::GetDrawData();
             
-            ImGui_ImplVulkan_RenderDrawData(draw_data, window.getCommandBuffer());
+            //ImGui_ImplVulkan_RenderDrawData(draw_data, window.getCommandBuffer());
 
+            window.draw(render, object);
+            
             window.display();
         }
         

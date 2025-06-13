@@ -54,7 +54,7 @@ class Mesh
 {
 
     RenderWindow* m_window;
-    MeshData m_meshData;
+    MeshData* m_meshData;
     
     VkBuffer m_vertexBuffer;
     VkDeviceMemory m_vertexUploader;
@@ -63,7 +63,7 @@ class Mesh
     VkDeviceMemory m_indexBufferUploader;
 
 public:
-    Mesh(RenderWindow& window, MeshData const& data);
+    Mesh(RenderWindow& window, MeshData* data);
     ~Mesh();
 
     VkBuffer const& getVertexBuffer() const;

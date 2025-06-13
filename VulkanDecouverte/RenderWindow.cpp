@@ -2,17 +2,14 @@
 
 #include <algorithm>
 #include <chrono>
-#include <map>
-#include <set>
 
 #include "Mesh.h"
 #include "RenderObject.h"
-#include "Shader.h"
+#include "RenderPipeline.h"
 
-RenderWindow::RenderWindow(const char* name, const int width, const int height) 
-    : Window( name, width, height ), m_device(&Application::getInstance()->getDevice())
+RenderWindow::RenderWindow(const char* name, const int width, const int height)
+    : Window(name, width, height), m_device(&Application::getInstance()->getDevice())
 {
-
     ubo.model = glm::mat4(1.0f);
 
     glfwSetWindowUserPointer(m_window, this);
@@ -28,11 +25,14 @@ RenderWindow::RenderWindow(const char* name, const int width, const int height)
     Application::getInstance()->setupLogicalDevice(getSurface());
 
     Initialize();
-    
+
+    m_renderTarget = new RenderTarget(this);
 }
 
 RenderWindow::~RenderWindow()
 {
+
+    delete m_renderTarget;
 
     cleanupSwapChain();
     
@@ -589,12 +589,12 @@ uint32_t RenderWindow::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
-const VkExtent2D& RenderWindow::getExtent2D()
+const VkExtent2D& RenderWindow::getExtent2D() const
 {
     return m_swapChainExtent;
 }
 
-const VkRenderPass& RenderWindow::getRenderPass()
+const VkRenderPass& RenderWindow::getRenderPass() const
 {
     return m_renderPass;
 }
@@ -613,6 +613,11 @@ const VkCommandBuffer& RenderWindow::getCommandBuffer()
 VkSurfaceKHR& RenderWindow::getSurface()
 {
     return m_surface;
+}
+
+VkPipelineLayout const& RenderWindow::getPipelineLayout() const
+{
+    return m_renderTarget->getPipelineLayout();
 }
 
 void RenderWindow::update()
@@ -677,13 +682,13 @@ void RenderWindow::clear()
 }
 
 
-void RenderWindow::draw(RenderObject& object, Shader& shader, mat4& transform)
+void RenderWindow::draw(RenderPipeline& pipeline, RenderObject& object)
 {
-    ubo.model = transform;
+    ubo.model = object.getTransform();
     memcpy(m_uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
 
     VkCommandBuffer& commandBuffer = m_commandBuffers[currentFrame];
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader.getPipeline());
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getGraphicsPipeline());
 
     VkBuffer vertexBuffers[] = {
         object.getMesh()->getVertexBuffer()
@@ -693,7 +698,7 @@ void RenderWindow::draw(RenderObject& object, Shader& shader, mat4& transform)
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
     vkCmdBindIndexBuffer(commandBuffer, object.getMesh()->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT16);
     
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader.getPipelineLayout(),
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_renderTarget->getPipelineLayout(),
         0, 1, &m_descriptorSets[currentFrame], 0, nullptr);
     vkCmdDrawIndexed(commandBuffer, object.getMesh()->getIndexCount(), 1, 0, 0, 0);
     

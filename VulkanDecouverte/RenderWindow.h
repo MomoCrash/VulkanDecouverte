@@ -2,10 +2,11 @@
 
 #include "framework.h"
 
-#include "Shader.h"
-#include "Window.h"
 #include "Application.h"
+#include "Window.h"
+#include "RenderTarget.h"
 
+class RenderPipeline;
 class RenderObject;
 
 struct UniformBufferObject {
@@ -46,17 +47,19 @@ public:
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 	
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-		
-	const VkExtent2D& getExtent2D();
-	const VkRenderPass& getRenderPass();
-	const VkDescriptorSetLayout& getDescriptorLayout();
-	const VkCommandBuffer& getCommandBuffer();
+
+	VkExtent2D const& getExtent2D() const;
+	VkRenderPass const& getRenderPass() const;
+	VkDescriptorSetLayout const& getDescriptorLayout();
+	VkCommandBuffer const& getCommandBuffer();
 	VkSurfaceKHR& getSurface();
+
+	VkPipelineLayout const& getPipelineLayout() const;
 
 	void update();
 	
 	void clear();
-	void draw(RenderObject& buffer, Shader& shader, mat4& transform);
+	void draw(RenderPipeline& pipeline, RenderObject& object);
 	void display();
 	
 private:
@@ -93,6 +96,8 @@ private:
 	VkExtent2D m_swapChainExtent;
 
 	// Render pipeline (PSO)
+	RenderTarget* m_renderTarget;
+	
 	VkRenderPass m_renderPass;
 	
 	VkDescriptorSetLayout m_descriptorSetLayout;
@@ -115,7 +120,7 @@ private:
 	std::vector<VkDeviceMemory> m_uniformBuffersMemory;
 	std::vector<void*> m_uniformBuffersMapped;
 
-	VkClearValue m_clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+	VkClearValue m_clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
 
 	// Need this because some drivers don't call resize
 	bool framebufferResized = false;

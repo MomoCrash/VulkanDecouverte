@@ -49,7 +49,7 @@ void NodeEditor::draw()
     ImGui::SetNextWindowPos(ImVec2(1, 1));
 
     // Draw the GUI
-    ImGui::Begin("Node Editor", nullptr, ImGuiWindowFlags_NoCollapse & ImGuiWindowFlags_NoResize);
+    ImGui::Begin("Node Editor", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
     mINF.update();
     BaseNode::draw();
     ImGui::End();

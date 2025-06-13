@@ -10,7 +10,7 @@
 RenderWindow::RenderWindow(const char* name, const int width, const int height)
     : Window(name, width, height), m_device(&Application::getInstance()->getDevice())
 {
-    ubo.model = glm::mat4(1.0f);
+    ubo.model = mat4(1.0f);
 
     glfwSetWindowUserPointer(m_window, this);
     glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow* window, int width, int height)
@@ -696,7 +696,7 @@ void RenderWindow::draw(RenderPipeline& pipeline, RenderObject& object)
     
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-    vkCmdBindIndexBuffer(commandBuffer, object.getMesh()->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT16);
+    vkCmdBindIndexBuffer(commandBuffer, object.getMesh()->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
     
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_renderTarget->getPipelineLayout(),
         0, 1, &m_descriptorSets[currentFrame], 0, nullptr);

@@ -15,6 +15,8 @@ Application::~Application()
     }
     
     vkDestroyInstance(m_instance, nullptr);
+
+    glfwTerminate();
 }
 
 void Application::Initialize(const char* appName)
@@ -24,6 +26,8 @@ void Application::Initialize(const char* appName)
     
     if (isInitialised) return;
     isInitialised = true;
+
+    glfwInit();
     
     // MAY NOT BE IN THIS CLASS BUT IN A RENDER CONTEXT BECAUSE OF m_instance UNIQUE
     // Drivers informations

@@ -13,7 +13,6 @@
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nCmdShow)
 {
-    glfwInit();
 
     // Call it to sync this window with the application
     Application::getInstance()->Initialize("Application");
@@ -28,11 +27,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     Mesh mesh(window, GeometryFactory::GetPrimitive(Primitive::CUBE));
 
     RenderObject object(&mesh);
+    object.setTransform(translate(object.getTransform(), vec3(-3.0f, 0.0f, 0.0f)));
+
     Shader sFragment("frag.spv", Shader::FRAGMENT);
     Shader sVertex("vert.spv", Shader::VERTEX);
 
     RenderPipeline render({ &sFragment, &sVertex}, window);
-    
 
     NodeEditor* editor = new NodeEditor(&ui);
     bool isNewWindow = false;
@@ -106,7 +106,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
             ImGui::Render();
             ImDrawData* draw_data = ImGui::GetDrawData();
             
-            //ImGui_ImplVulkan_RenderDrawData(draw_data, window.getCommandBuffer());
+            ImGui_ImplVulkan_RenderDrawData(draw_data, window.getCommandBuffer());
 
             window.draw(render, object);
             
@@ -139,8 +139,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-
-    glfwTerminate();
     
     return 0;
 }

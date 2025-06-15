@@ -101,26 +101,39 @@ RenderPipeline::RenderPipeline(std::vector<Shader*> shaders, RenderWindow& windo
     colorBlending.blendConstants[1] = 0.0f; // Optional
     colorBlending.blendConstants[2] = 0.0f; // Optional
     colorBlending.blendConstants[3] = 0.0f; // Optional
+
+    VkPipelineDepthStencilStateCreateInfo pipelineDepthStencilStateCreateInfo {};
+    pipelineDepthStencilStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    pipelineDepthStencilStateCreateInfo.depthTestEnable = VK_TRUE;
+    pipelineDepthStencilStateCreateInfo.depthWriteEnable = VK_TRUE;
+    pipelineDepthStencilStateCreateInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+    pipelineDepthStencilStateCreateInfo.back.compareOp = VK_COMPARE_OP_ALWAYS;
+
+    VkPipelineCacheCreateInfo pipelineCacheCreateInfo = {};
+    pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+    vkCreatePipelineCache(Application::getInstance()->getDevice(), &pipelineCacheCreateInfo, nullptr, &m_pipelineCache);
     
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipelineInfo.stageCount = 2;
+    pipelineInfo.stageCount = static_cast<uint32_t>(infos.size());
     pipelineInfo.pStages = infos.data();
     pipelineInfo.pVertexInputState = &vertexInputInfo;
     pipelineInfo.pInputAssemblyState = &inputAssembly;
     pipelineInfo.pViewportState = &viewportState;
     pipelineInfo.pRasterizationState = &rasterizer;
     pipelineInfo.pMultisampleState = &multisampling;
-    pipelineInfo.pDepthStencilState = nullptr; // Optional
+    pipelineInfo.pDepthStencilState = &pipelineDepthStencilStateCreateInfo;
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.layout = window.getPipelineLayout();
     pipelineInfo.renderPass = window.getRenderPass();
+    pipelineInfo.flags = 0;
     pipelineInfo.subpass = 0;
-    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
-    pipelineInfo.basePipelineIndex = -1; // Optional
+    pipelineInfo.basePipelineIndex = -1;
+    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-    if (vkCreateGraphicsPipelines(Application::getInstance()->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(Application::getInstance()->getDevice(), m_pipelineCache, 1,
+                                  &pipelineInfo, nullptr, &m_graphicsPipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
     
@@ -128,6 +141,7 @@ RenderPipeline::RenderPipeline(std::vector<Shader*> shaders, RenderWindow& windo
 
 RenderPipeline::~RenderPipeline()
 {
+    vkDestroyPipelineCache(Application::getInstance()->getDevice(), m_pipelineCache, nullptr);
     vkDestroyPipeline(Application::getInstance()->getDevice(), m_graphicsPipeline, nullptr);
 }
 

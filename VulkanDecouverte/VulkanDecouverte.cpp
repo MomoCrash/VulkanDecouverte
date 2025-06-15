@@ -29,6 +29,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     RenderObject object(&mesh);
     object.setTransform(translate(object.getTransform(), vec3(0.0f, 0.0f, 0.0f)));
 
+    RenderObject object2(&mesh);
+    object.setTransform(translate(object.getTransform(), vec3(5.0f, 0.0f, 0.0f)));
+
     Shader sFragment("frag.spv", Shader::FRAGMENT);
     Shader sVertex("vert.spv", Shader::VERTEX);
 
@@ -106,8 +109,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
             ImGui::Render();
             ImDrawData* draw_data = ImGui::GetDrawData();
             
-            //ImGui_ImplVulkan_RenderDrawData(draw_data, window.getCommandBuffer());
-
+            ImGui_ImplVulkan_RenderDrawData(draw_data, window.getCommandBuffer());
+            
             window.draw(render, object);
             
             window.display();

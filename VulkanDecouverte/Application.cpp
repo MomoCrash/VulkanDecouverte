@@ -193,10 +193,9 @@ VkInstance& Application::getVulkanInstance()
 
 int Application::rateDeviceSuitability(VkPhysicalDevice device, VkSurfaceKHR& surface)
 {
-    VkPhysicalDeviceProperties deviceProperties;
-    VkPhysicalDeviceFeatures deviceFeatures;
-    vkGetPhysicalDeviceProperties(device, &deviceProperties);
-    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+    vkGetPhysicalDeviceProperties(device, &m_deviceProperties);
+    vkGetPhysicalDeviceFeatures(device, &m_deviceFeatures);
 
     bool extensionsSupported = checkDeviceExtensionSupport(device);
     QueueFamilyIndices familyQueue = findQueueFamilies(device, surface);
@@ -204,7 +203,7 @@ int Application::rateDeviceSuitability(VkPhysicalDevice device, VkSurfaceKHR& su
     int score = 0;
 
     // Discrete GPUs have a significant performance advantage
-    if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+    if (m_deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
         score += 1000;
     }
 
@@ -215,10 +214,10 @@ int Application::rateDeviceSuitability(VkPhysicalDevice device, VkSurfaceKHR& su
     }
 
     // Maximum possible size of textures affects graphics quality
-    score += deviceProperties.limits.maxImageDimension2D;
+    score += m_deviceProperties.limits.maxImageDimension2D;
 
     // Application can't function without geometry shaders
-    if (!deviceFeatures.geometryShader
+    if (!m_deviceFeatures.geometryShader
         || !familyQueue.isComplete()
         || !extensionsSupported
         || !swapChainAdequate) {
@@ -377,6 +376,16 @@ VkQueue const& Application::getGraphicQueue()
 VkQueue const& Application::getPresentQueue()
 {
     return m_presentQueue;
+}
+
+VkPhysicalDeviceProperties& Application::GetPhysicalDeviceProperties()
+{
+    return m_deviceProperties;
+}
+
+VkPhysicalDeviceFeatures& Application::GetPhysicalDeviceFeatures()
+{
+    return m_deviceFeatures;
 }
 
 VkBool32 Application::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

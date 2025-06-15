@@ -43,6 +43,9 @@ public:
     VkQueue const& getGraphicQueue();
     VkQueue const& getPresentQueue();
 
+    VkPhysicalDeviceProperties& GetPhysicalDeviceProperties();
+    VkPhysicalDeviceFeatures& GetPhysicalDeviceFeatures();
+
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR& surface);
     SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR& surface);
 
@@ -63,6 +66,9 @@ private:
     VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE; // Graphic Card Used
     VkQueue m_presentQueue = nullptr;
     VkQueue m_graphicsQueue = nullptr;
+
+    VkPhysicalDeviceProperties m_deviceProperties;
+    VkPhysicalDeviceFeatures m_deviceFeatures;
 
     VkDebugUtilsMessengerEXT m_debugMessenger = nullptr; // Debugger
 

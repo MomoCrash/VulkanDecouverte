@@ -28,6 +28,8 @@ void NodeEditor::draw()
     if (glfwWindowShouldClose(window->GetWindow()))
     {
         window->clear();
+        window->display();
+        
         delete window;
         window = nullptr;
         contextGuiHandlers->remove(index);

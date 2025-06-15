@@ -1,5 +1,7 @@
 #pragma once
 
+#include <chrono>
+
 #include "framework.h"
 
 #include "Application.h"
@@ -9,14 +11,16 @@
 class RenderPipeline;
 class RenderObject;
 
-struct UniformBufferObject {
-	mat4 view;
-	mat4 proj;
-	mat4 model;
-};
-
 class RenderWindow : public Window {
 
+	struct UniformBufferObject {
+		mat4 view;
+		mat4 proj;
+	} ubo;
+
+	struct UboDataDynamic {
+		mat4* model{ nullptr };
+	} dynamicUbo;
 
 public:
 	const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -81,6 +85,9 @@ private:
 	//  bool checkValidationSupport();
 
 	// Reference to the device (Replace code on top)
+	
+	std::chrono::time_point<std::chrono::high_resolution_clock> lastTime;
+	uint32 frameCounter;
 	VkDevice const* m_device;
 
 	// Main device element
@@ -116,9 +123,18 @@ private:
 	std::vector<VkFence> m_inFlightFences;
 
 	// Constant buffers
-	std::vector<VkBuffer> m_uniformBuffers;
+
+	size_t dynamicAlignment{ 0 };
+	uint currentObject;
+	
+	std::vector<VkBuffer>		m_uniformBuffers;
 	std::vector<VkDeviceMemory> m_uniformBuffersMemory;
-	std::vector<void*> m_uniformBuffersMapped;
+	std::vector<void*>			m_uniformBuffersMapped;
+
+	std::vector<VkBuffer>		m_dynamicUniformBuffers;
+	std::vector<VkDeviceMemory> m_dynamicUniformBuffersMemory;
+	std::vector<void*>			m_dynamicUniformBuffersMapped;
+	
 
 	VkClearValue m_clearColor = { {{0.0f, 0.2f, 0.0f, 1.0f}} };
 
@@ -127,8 +143,7 @@ private:
 	
 	VkViewport m_viewport;
 	VkRect2D m_scissor;
-
-	UniformBufferObject ubo{};
+	
 	vec3 position = vec3(0.0f, 0.0f, -3.0f);
 
 	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);

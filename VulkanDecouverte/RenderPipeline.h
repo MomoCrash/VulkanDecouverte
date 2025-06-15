@@ -15,5 +15,6 @@ public:
     VkPipeline& getGraphicsPipeline();
 
 private:
-    VkPipeline m_graphicsPipeline;
+    VkPipelineCache m_pipelineCache{ VK_NULL_HANDLE };
+    VkPipeline m_graphicsPipeline{ VK_NULL_HANDLE };
 };

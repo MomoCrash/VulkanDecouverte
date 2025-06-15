@@ -45,7 +45,7 @@ RenderTarget::~RenderTarget()
     vkDestroyPipelineLayout(Application::getInstance()->getDevice(), m_pipelineLayout, nullptr);
 }
 
-VkPipelineLayout const& RenderTarget::getPipelineLayout() const
+VkPipelineLayout& RenderTarget::getPipelineLayout()
 {
     return m_pipelineLayout;
 }

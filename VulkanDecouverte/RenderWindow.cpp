@@ -26,7 +26,6 @@ RenderWindow::RenderWindow(const char* name, const int width, const int height)
 
     Initialize();
 
-    m_renderTarget = new RenderTarget(this);
 }
 
 RenderWindow::~RenderWindow()
@@ -64,14 +63,18 @@ void RenderWindow::Initialize()
     createRenderPass();
 
     createImageViews();
+    
 
     createDescriptorSetLayout();
+
+    m_renderTarget = new RenderTarget(this);
 
     createFramebuffers();
 
     createCommandPool();
 
     createDepthResources();
+
 
     createUniformBuffers();
 
@@ -589,18 +592,18 @@ uint32_t RenderWindow::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
-const VkExtent2D& RenderWindow::getExtent2D() const
+const VkExtent2D& RenderWindow::getExtent2D()
 {
     return m_swapChainExtent;
 }
 
-const VkRenderPass& RenderWindow::getRenderPass() const
+const VkRenderPass& RenderWindow::getRenderPass()
 {
     return m_renderPass;
 }
 
 
-const VkDescriptorSetLayout& RenderWindow::getDescriptorLayout()
+VkDescriptorSetLayout& RenderWindow::getDescriptorLayout()
 {
     return m_descriptorSetLayout;
 }
@@ -615,7 +618,7 @@ VkSurfaceKHR& RenderWindow::getSurface()
     return m_surface;
 }
 
-VkPipelineLayout const& RenderWindow::getPipelineLayout() const
+VkPipelineLayout& RenderWindow::getPipelineLayout()
 {
     return m_renderTarget->getPipelineLayout();
 }
@@ -629,9 +632,13 @@ void RenderWindow::update()
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float>(currentTime - startTime).count();
     
-    ubo.view = lookAt(vec3(2.0f, 2.0f, 2.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = perspective(radians(45.0f), m_swapChainExtent.width / (float) m_swapChainExtent.height, 0.1f, 10.0f);
+
+    ubo.view = lookAt(vec3(2.0f, 2.0f,  2.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 1.0f));
+    ubo.proj = perspective(radians(45.0f), static_cast<float>(getExtent2D().width / getExtent2D().height), 0.1f, 20.0f);
     ubo.proj[1][1] *= -1;
+
+    ubo.model = rotate(mat4(1.0f), 1.0f, vec3(0.f, time, 0.f));
+    memcpy(m_uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
 
 }
 
@@ -684,8 +691,7 @@ void RenderWindow::clear()
 
 void RenderWindow::draw(RenderPipeline& pipeline, RenderObject& object)
 {
-    ubo.model = object.getTransform();
-    memcpy(m_uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
+    //ubo.model = object.getTransform();
 
     VkCommandBuffer& commandBuffer = m_commandBuffers[currentFrame];
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getGraphicsPipeline());

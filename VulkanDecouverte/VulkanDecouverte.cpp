@@ -27,7 +27,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     Mesh mesh(window, GeometryFactory::GetPrimitive(Primitive::CUBE));
 
     RenderObject object(&mesh);
-    object.setTransform(translate(object.getTransform(), vec3(-3.0f, 0.0f, 0.0f)));
+    object.setTransform(translate(object.getTransform(), vec3(0.0f, 0.0f, 0.0f)));
 
     Shader sFragment("frag.spv", Shader::FRAGMENT);
     Shader sVertex("vert.spv", Shader::VERTEX);
@@ -93,7 +93,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
                 ImGui::SliderFloat("float", &f, -1.0f, 1.0f);
                 if (ImGui::Button("Move forward"))
                 {
-                    object.setTransform(translate(object.getTransform(), vec3(f, 0.0f, 0.0f)));
+                    object.setTransform(translate(object.getTransform(), vec3(f, 0.0f, f)));
                     counter++;
                 }
                 ImGui::SameLine();
@@ -106,7 +106,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
             ImGui::Render();
             ImDrawData* draw_data = ImGui::GetDrawData();
             
-            ImGui_ImplVulkan_RenderDrawData(draw_data, window.getCommandBuffer());
+            //ImGui_ImplVulkan_RenderDrawData(draw_data, window.getCommandBuffer());
 
             window.draw(render, object);
             

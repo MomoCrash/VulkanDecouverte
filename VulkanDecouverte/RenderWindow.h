@@ -10,9 +10,9 @@ class RenderPipeline;
 class RenderObject;
 
 struct UniformBufferObject {
-	mat4 model;
 	mat4 view;
 	mat4 proj;
+	mat4 model;
 };
 
 class RenderWindow : public Window {
@@ -48,13 +48,13 @@ public:
 	
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
-	VkExtent2D const& getExtent2D() const;
-	VkRenderPass const& getRenderPass() const;
-	VkDescriptorSetLayout const& getDescriptorLayout();
+	VkExtent2D const& getExtent2D();
+	VkRenderPass const& getRenderPass();
+	VkDescriptorSetLayout& getDescriptorLayout();
 	VkCommandBuffer const& getCommandBuffer();
 	VkSurfaceKHR& getSurface();
 
-	VkPipelineLayout const& getPipelineLayout() const;
+	VkPipelineLayout& getPipelineLayout();
 
 	void update();
 	
@@ -120,7 +120,7 @@ private:
 	std::vector<VkDeviceMemory> m_uniformBuffersMemory;
 	std::vector<void*> m_uniformBuffersMapped;
 
-	VkClearValue m_clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+	VkClearValue m_clearColor = { {{0.0f, 0.2f, 0.0f, 1.0f}} };
 
 	// Need this because some drivers don't call resize
 	bool framebufferResized = false;
@@ -129,6 +129,7 @@ private:
 	VkRect2D m_scissor;
 
 	UniformBufferObject ubo{};
+	vec3 position = vec3(0.0f, 0.0f, -3.0f);
 
 	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 	VkFormat findDepthFormat();

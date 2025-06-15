@@ -47,7 +47,7 @@ struct Vertex
 struct MeshData
 {
     std::vector<Vertex> Vertices;
-    std::vector<uint32_t> Indices;
+    std::vector<uint32> Indices;
 };
 
 class Mesh
@@ -69,6 +69,6 @@ public:
     VkBuffer const& getVertexBuffer() const;
     VkBuffer const& getIndexBuffer() const;
     std::vector<Vertex> const& getVertices() const;
-    uint32_t getIndexCount() const;
+    uint32 getIndexCount() const;
     
 };

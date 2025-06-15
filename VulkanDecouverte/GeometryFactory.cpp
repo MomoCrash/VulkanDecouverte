@@ -7,6 +7,7 @@ GeometryFactory::GeometryFactory()
 {
 	
 	mPrimitives.try_emplace(Primitive::CUBE, Primitive(CreateCube(1, 1, 1)));
+	mPrimitives.try_emplace(Primitive::PLANE, Primitive(CreatePlane(1, 1)));
 	
 }
 
@@ -151,83 +152,97 @@ MeshData* GeometryFactory::CreateCube(float width, float height, float depth)
 {
 	MeshData* meshData = new MeshData();
 
+	float w2 = 0.5f*width;
+	float h2 = 0.5f*height;
+	float d2 = 0.5f*depth;
+
     //
 	// Create the vertices.
 	//
 
-	meshData->Vertices = std::vector<Vertex>(24);
+	meshData->Vertices = {
+		// FRONT FACE
+		{-w2, -h2, +d2, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f},
+		{+w2, -h2, +d2, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f},
+		{+w2, +h2, +d2, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f},
+		{-w2, +h2, +d2, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f},
 
-	float w2 = 0.5f*width;
-	float h2 = 0.5f*height;
-	float d2 = 0.5f*depth;
-    
-	// Fill in the front face vertex data.
-	meshData->Vertices[0] = Vertex(-w2, -h2, -d2, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f);
-	meshData->Vertices[1] = Vertex(-w2, +h2, -d2, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f);
-	meshData->Vertices[2] = Vertex(+w2, +h2, -d2, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f);
-	meshData->Vertices[3] = Vertex(+w2, -h2, -d2, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f);
+		 // BACK FACE
+		{-w2, -h2, -d2, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f},
+		{-w2, +h2, -d2, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f},
+		{+w2, +h2, -d2, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f},
+		{+w2, -h2, -d2, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f},
 
-	// Fill in the back face vertex data.
-	meshData->Vertices[4] = Vertex(-w2, -h2, +d2, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f);
-	meshData->Vertices[5] = Vertex(+w2, -h2, +d2, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
-	meshData->Vertices[6] = Vertex(+w2, +h2, +d2, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f);
-	meshData->Vertices[7] = Vertex(-w2, +h2, +d2, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f);
+		// TOP FACE
+		{-w2, +h2, -d2, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f},
+		{-w2, +h2, +d2, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f},
+		{+w2, +h2, +d2, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f},
+		{+w2, +h2, -d2, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f},
 
-	// Fill in the top face vertex data.
-	meshData->Vertices[8]  = Vertex(-w2, +h2, -d2, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f);
-	meshData->Vertices[9]  = Vertex(-w2, +h2, +d2, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f);
-	meshData->Vertices[10] = Vertex(+w2, +h2, +d2, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f);
-	meshData->Vertices[11] = Vertex(+w2, +h2, -d2, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f);
+		// Bottom face
+		{-w2, +h2, -d2, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f},
+		{-w2, +h2, +d2, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f},
+		{+w2, +h2, +d2, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f},
+		{+w2, +h2, -d2, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f},
 
-	// Fill in the bottom face vertex data.
-	meshData->Vertices[12] = Vertex(-w2, -h2, -d2, 0.0f, -1.0f, 0.0f, 1.0f, 1.0f);
-	meshData->Vertices[13] = Vertex(+w2, -h2, -d2, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f);
-	meshData->Vertices[14] = Vertex(+w2, -h2, +d2, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f);
-	meshData->Vertices[15] = Vertex(-w2, -h2, +d2, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f);
+		// Left face
+		{-w2, -h2, +d2, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+		{-w2, +h2, +d2, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+		{-w2, +h2, -d2, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f},
+		{-w2, -h2, -d2, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f},
 
-	// Fill in the left face vertex data.
-	meshData->Vertices[16] = Vertex(-w2, -h2, +d2, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-	meshData->Vertices[17] = Vertex(-w2, +h2, +d2, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-	meshData->Vertices[18] = Vertex(-w2, +h2, -d2, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f);
-	meshData->Vertices[19] = Vertex(-w2, -h2, -d2, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f);
+		// Right face
+		{+w2, -h2, -d2, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+		{+w2, +h2, -d2, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+		{+w2, +h2, +d2, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f},
+		{+w2, -h2, +d2, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f},
+	};
 
-	// Fill in the right face vertex data.
-	meshData->Vertices[20] = Vertex(+w2, -h2, -d2, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-	meshData->Vertices[21] = Vertex(+w2, +h2, -d2, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-	meshData->Vertices[22] = Vertex(+w2, +h2, +d2, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f);
-	meshData->Vertices[23] = Vertex(+w2, -h2, +d2, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f);
- 
-	//
-	// Create the indices.
-	//
+	meshData->Indices = {
+		// Front face
+		0, 1, 2,
+		0, 2, 3,
 
-	uint32 i[36];
+		// Back face
+		4, 5, 6,
+		4, 6, 7,
 
-	// Fill in the front face index data
-	i[0] = 0; i[1] = 1; i[2] = 2;
-	i[3] = 0; i[4] = 2; i[5] = 3;
+		// Top face
+		8, 9, 10,
+		8, 10, 11,
 
-	// Fill in the back face index data
-	i[6] = 4; i[7]  = 5; i[8]  = 6;
-	i[9] = 4; i[10] = 6; i[11] = 7;
+		// Bottom face
+		12, 14, 13,
+		12, 15, 14,
 
-	// Fill in the top face index data
-	i[12] = 8; i[13] =  9; i[14] = 10;
-	i[15] = 8; i[16] = 10; i[17] = 11;
+		// Left face
+		16, 17, 18,
+		16, 18, 19,
 
-	// Fill in the bottom face index data
-	i[18] = 12; i[19] = 13; i[20] = 14;
-	i[21] = 12; i[22] = 14; i[23] = 15;
-
-	// Fill in the left face index data
-	i[24] = 16; i[25] = 17; i[26] = 18;
-	i[27] = 16; i[28] = 18; i[29] = 19;
-
-	// Fill in the right face index data
-	i[30] = 20; i[31] = 21; i[32] = 22;
-	i[33] = 20; i[34] = 22; i[35] = 23;
-
-	meshData->Indices.assign(&i[0], &i[36]);
+		// Right face
+		20, 21, 22,
+		20, 22, 23
+	};
 
 	return meshData;
+}
+
+MeshData* GeometryFactory::CreatePlane(float width, float height)
+{
+
+	MeshData* meshData = new MeshData();
+	
+	meshData->Vertices = {
+		{ -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+		{0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+		{0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f},
+		{-0.5f, 0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f}
+	};
+
+	meshData->Indices = {
+		0, 2, 1, 2, 0, 3
+	};
+
+	return meshData;
+
 }

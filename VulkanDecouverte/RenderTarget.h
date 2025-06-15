@@ -13,7 +13,7 @@ public:
     RenderTarget(RenderWindow* window);
     ~RenderTarget();
 
-    VkPipelineLayout const& getPipelineLayout() const;
+    VkPipelineLayout& getPipelineLayout();
 
 private:
     

@@ -76,7 +76,7 @@ std::vector<Vertex> const& Mesh::getVertices() const
     return m_meshData->Vertices;
 }
 
-uint32_t Mesh::getIndexCount() const
+uint32 Mesh::getIndexCount() const
 {
     return m_meshData->Indices.size();
 }

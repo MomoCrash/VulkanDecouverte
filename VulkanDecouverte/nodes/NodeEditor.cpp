@@ -27,7 +27,7 @@ void NodeEditor::draw()
 
     if (glfwWindowShouldClose(window->GetWindow()))
     {
-        vkDeviceWaitIdle(Application::getInstance()->getDevice());
+        window->clear();
         delete window;
         window = nullptr;
         contextGuiHandlers->remove(index);

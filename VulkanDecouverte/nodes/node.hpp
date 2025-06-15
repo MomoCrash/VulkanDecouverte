@@ -20,11 +20,11 @@ public:
 
     void draw() override
     {
-        if(isSelected()) {
+        /*if(isSelected()) {
             ImGui::SetNextItemWidth(100.f);
             ImGui::InputInt("##ValB", &m_valB);
             ImGui::Button("Hello");
-        }
+        }*/
 
         if (isHovered())
         {

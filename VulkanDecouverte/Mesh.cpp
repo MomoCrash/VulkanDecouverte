@@ -18,7 +18,7 @@ Mesh::Mesh(RenderWindow& window, MeshData* dMesh) : m_vertexBuffer(nullptr)
 
     VkBuffer stagingBuffer = nullptr;
     VkDeviceMemory stagingBufferMemory = nullptr;
-    window.createBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    Application::getInstance()->createBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
             stagingBuffer, stagingBufferMemory, vSize);
 
@@ -27,7 +27,7 @@ Mesh::Mesh(RenderWindow& window, MeshData* dMesh) : m_vertexBuffer(nullptr)
     memcpy(data, dMesh->Vertices.data(), vSize);
     vkUnmapMemory(Application::getInstance()->getDevice(), stagingBufferMemory);
 
-    window.createBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+    Application::getInstance()->createBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         m_vertexBuffer, m_vertexUploader, vSize);
 
@@ -39,7 +39,7 @@ Mesh::Mesh(RenderWindow& window, MeshData* dMesh) : m_vertexBuffer(nullptr)
     memcpy(data, dMesh->Indices.data(), iSize);
     vkUnmapMemory(Application::getInstance()->getDevice(), stagingBufferMemory);
 
-    window.createBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+    Application::getInstance()->createBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         m_indexBuffer, m_indexBufferUploader, iSize);
 

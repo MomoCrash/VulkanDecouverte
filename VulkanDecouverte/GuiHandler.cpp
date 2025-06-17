@@ -3,10 +3,7 @@
 #include "Application.h"
 #include "RenderWindow.h"
 
-GuiHandler::GuiHandler()
-{
-
-}
+GuiHandler::GuiHandler() = default;
 
 GuiHandler::~GuiHandler()
 {

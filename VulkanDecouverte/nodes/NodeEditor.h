@@ -11,11 +11,13 @@ struct NodeEditor : ImFlow::BaseNode
     GuiHandler* contextGuiHandlers;
 
     int index = 0;
+    bool m_isOpen = false;
     
     NodeEditor(GuiHandler* handler);
     ~NodeEditor();
 
     void open();
+    void close();
     void draw();
-    bool isOpen();
+    
 };

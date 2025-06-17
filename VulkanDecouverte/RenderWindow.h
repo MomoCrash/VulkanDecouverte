@@ -13,6 +13,17 @@ class RenderObject;
 
 class RenderWindow : public Window {
 
+	struct Texture {
+		VkSampler sampler{ VK_NULL_HANDLE };
+		VkImage image{ VK_NULL_HANDLE };
+		VkImageLayout imageLayout;
+		VkDeviceMemory deviceMemory{ VK_NULL_HANDLE };
+		VkImageView view{ VK_NULL_HANDLE };
+		uint32_t width{ 0 };
+		uint32_t height{ 0 };
+		uint32_t mipLevels{ 0 };
+	} texture;
+
 	struct UniformBufferObject {
 		mat4 view;
 		mat4 proj;
@@ -45,12 +56,8 @@ public:
 	void createCommandBuffer();
 	void createSyncObjects();
 	void recreateSwapchain();
-	
-	void createBuffer(VkBufferUsageFlags usages, VkMemoryPropertyFlags flags,
-	VkBuffer& buffer, VkDeviceMemory& uploader, uint64_t size);
+
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-	
-	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 	VkExtent2D const& getExtent2D();
 	VkRenderPass const& getRenderPass();
@@ -63,9 +70,12 @@ public:
 	void update();
 	
 	void clear();
-	void draw(RenderPipeline& pipeline, RenderObject& object);
+	void drawObject(RenderPipeline& pipeline, RenderObject& object);
 	void display();
-	
+
+	bool shouldClose();
+	virtual void draw();
+
 private:
 	// All of this come from an older version of the app when Application class don't exist now all of this is global context of window
 	// 	VkInstance m_instance; // Vulkan Global Instance

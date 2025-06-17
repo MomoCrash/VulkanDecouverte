@@ -17,5 +17,5 @@ layout(location = 0) out vec4 fragColor;
 
 void main() {
     gl_Position = globalBuffer.proj * globalBuffer.view * uboInstance.model * vec4(position, 1.0);
-    fragColor = vec4(255.0f, 255.0f, 255.0f, 255.0f);
+    fragColor = vec4(normal.x, normal.y, normal.z, 255.0f);
 }

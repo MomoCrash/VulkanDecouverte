@@ -8,15 +8,23 @@
 Application::~Application()
 {
 
+    // Cleanup
+    vkDeviceWaitIdle(getInstance()->getDevice());
+
+    ImGui_ImplVulkan_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
     vkDestroyDevice(m_device, nullptr);
 
-    if (Application::getInstance()->useValidationLayer()) {
-        DestroyDebugUtilsMessengerEXT(Application::getInstance()->getVulkanInstance(), m_debugMessenger, nullptr);
+    if (getInstance()->useValidationLayer()) {
+        DestroyDebugUtilsMessengerEXT(getInstance()->getVulkanInstance(), m_debugMessenger, nullptr);
     }
     
     vkDestroyInstance(m_instance, nullptr);
 
     glfwTerminate();
+    
 }
 
 void Application::Initialize(const char* appName)
@@ -411,6 +419,49 @@ VkBool32 Application::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messa
     }
 }
 
+uint32_t Application::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+{
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties(getInstance()->getPhysicalDevice(), &memProperties);
+
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+            return i;
+        }
+    }
+
+    throw std::runtime_error("failed to find suitable memory type!");
+}
+
+void Application::createBuffer(VkBufferUsageFlags usages, VkMemoryPropertyFlags flags,
+    VkBuffer& buffer, VkDeviceMemory& uploader, uint64_t size)
+{
+    
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = size;
+    bufferInfo.usage = usages;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateBuffer(m_device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create vertex buffer!");
+    }
+    
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(m_device, buffer, &memRequirements);
+    
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, flags);
+
+    if (vkAllocateMemory(m_device, &allocInfo, nullptr, &uploader) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate upload buffer memory!");
+    }
+
+    vkBindBufferMemory(m_device, buffer, uploader, 0);
+}
+
 VkResult Application::CreateDebugUtilsMessengerEXT(VkInstance instance,
     const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator,
     VkDebugUtilsMessengerEXT* pDebugMessenger)
@@ -431,3 +482,5 @@ void Application::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtil
         func(instance, debugMessenger, pAllocator);
     }
 }
+
+

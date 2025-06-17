@@ -307,7 +307,7 @@ void RenderWindow::createUniformBuffers()
     m_uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        Application::getInstance()->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
             m_uniformBuffers[i], m_uniformBuffersMemory[i], bufferSize);
 
@@ -332,7 +332,7 @@ void RenderWindow::createUniformBuffers()
     m_dynamicUniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        Application::getInstance()->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
             m_dynamicUniformBuffers[i], m_dynamicUniformBuffersMemory[i], dBufferSize);
 
@@ -474,72 +474,6 @@ void RenderWindow::recreateSwapchain()
     createFramebuffers();
 }
 
-void RenderWindow::createBuffer(VkBufferUsageFlags usages, VkMemoryPropertyFlags flags,
-    VkBuffer& buffer, VkDeviceMemory& uploader, uint64_t size)
-{
-    
-    VkBufferCreateInfo bufferInfo{};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = size;
-    bufferInfo.usage = usages;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    if (vkCreateBuffer(*m_device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create vertex buffer!");
-    }
-    
-    VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(*m_device, buffer, &memRequirements);
-    
-    VkMemoryAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, flags);
-
-    if (vkAllocateMemory(*m_device, &allocInfo, nullptr, &uploader) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate upload buffer memory!");
-    }
-
-    vkBindBufferMemory(*m_device, buffer, uploader, 0);
-}
-
-void RenderWindow::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
-{
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = m_commandPool;
-    allocInfo.commandBufferCount = 1;
-
-    VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(*m_device, &allocInfo, &commandBuffer);
-
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
-    VkBufferCopy copyRegion{};
-    copyRegion.srcOffset = 0; // Optional
-    copyRegion.dstOffset = 0; // Optional
-    copyRegion.size = size;
-    vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-
-    vkEndCommandBuffer(commandBuffer);
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer;
-
-    vkQueueSubmit(Application::getInstance()->getGraphicQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(Application::getInstance()->getGraphicQueue());
-
-    vkFreeCommandBuffers(*m_device, m_commandPool, 1, &commandBuffer);
-    
-}
-
 VkSurfaceFormatKHR RenderWindow::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
 {
     for (const auto& availableFormat : availableFormats) {
@@ -633,18 +567,41 @@ void RenderWindow::createLogicalDevice()
 {
 }
 
-uint32_t RenderWindow::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+void RenderWindow::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 {
-    VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(Application::getInstance()->getPhysicalDevice(), &memProperties);
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = m_commandPool;
+    allocInfo.commandBufferCount = 1;
 
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-            return i;
-        }
-    }
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers(*m_device, &allocInfo, &commandBuffer);
 
-    throw std::runtime_error("failed to find suitable memory type!");
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+    VkBufferCopy copyRegion{};
+    copyRegion.srcOffset = 0; // Optional
+    copyRegion.dstOffset = 0; // Optional
+    copyRegion.size = size;
+    vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+    vkEndCommandBuffer(commandBuffer);
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+
+    vkQueueSubmit(Application::getInstance()->getGraphicQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(Application::getInstance()->getGraphicQueue());
+
+    vkFreeCommandBuffers(*m_device, m_commandPool, 1, &commandBuffer);
+    
 }
 
 const VkExtent2D& RenderWindow::getExtent2D()
@@ -686,7 +643,7 @@ void RenderWindow::update()
     
     frameCounter++;
 
-    ubo.view = lookAt(vec3(0.0f, 0.0f,  -30.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
+    ubo.view = lookAt(vec3(-5.0f, 3.0f,  -5.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
     ubo.proj = perspective(radians(70.0f), (float)m_swapChainExtent.width / (float)m_swapChainExtent.height, 0.1f, 256.0f);
     ubo.proj[1][1] *= -1.0f;
     
@@ -758,7 +715,7 @@ void RenderWindow::clear()
 }
 
 
-void RenderWindow::draw(RenderPipeline& pipeline, RenderObject& object)
+void RenderWindow::drawObject(RenderPipeline& pipeline, RenderObject& object)
 {
     glm::mat4* modelMat = (mat4*)(((uint64_t)dynamicUbo.model + (currentObject * dynamicAlignment)));
     *modelMat = object.getTransform();
@@ -784,6 +741,8 @@ void RenderWindow::draw(RenderPipeline& pipeline, RenderObject& object)
     currentObject++;
 
 }
+
+void RenderWindow::draw() { }
 
 void RenderWindow::display()
 {
@@ -867,4 +826,9 @@ VkFormat RenderWindow::findDepthFormat()
 bool RenderWindow::hasStencilComponent(VkFormat format)
 {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+}
+
+bool RenderWindow::shouldClose()
+{
+    return glfwWindowShouldClose(m_window);
 }

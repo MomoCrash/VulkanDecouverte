@@ -10,37 +10,34 @@ NodeEditor::NodeEditor(GuiHandler* handler)
 
 NodeEditor::~NodeEditor()
 {
-    if (isOpen())
+    if (window != nullptr)
         delete window;
 }
 
 void NodeEditor::open()
 {
-    window = new RenderWindow("Editor Window", 500, 500);
-    index = contextGuiHandlers->inject(window);
-
-    mINF.addNode<SimpleSum>(ImVec2(200, 200));
+    m_isOpen = true;
 }
 
 void NodeEditor::draw()
 {
 
-    if (glfwWindowShouldClose(window->GetWindow()))
+    if (m_isOpen)
     {
-        window->clear();
-        window->display();
-        
-        delete window;
-        window = nullptr;
-        contextGuiHandlers->remove(index);
-        return;
+        window = new RenderWindow("Editor Window", 500, 500);
+        index = contextGuiHandlers->inject(window);
+
+        mINF.addNode<SimpleSum>(ImVec2(200, 200));
+        m_isOpen = false;
     }
+    
+    if (window == nullptr) return;
 
     window->update();
     window->clear();
-    
-    contextGuiHandlers->setContext(index);
 
+    contextGuiHandlers->setContext(index);
+    
     // Init the ImGUI Frame
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -63,10 +60,16 @@ void NodeEditor::draw()
     ImGui_ImplVulkan_RenderDrawData(draw_data, window->getCommandBuffer());
 
     window->display();
-        
-}
 
-bool NodeEditor::isOpen()
-{
-    return window != nullptr;
+    if (glfwWindowShouldClose(window->GetWindow()))
+    {
+        window->clear();
+        
+        delete window;
+        window = nullptr;
+        contextGuiHandlers->setContext(0);
+        contextGuiHandlers->remove(index);
+        
+    }
+        
 }

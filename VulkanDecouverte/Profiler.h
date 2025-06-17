@@ -12,9 +12,9 @@ struct Task
 class Profiler
 {
 public:
-    Profiler();
-    void NewTask(std::string name);
-    void EndTask();
+    ~Profiler();
+    static void NewTask(std::string name);
+    static void EndTask();
 private:
-    Task mTask;
+    static inline Task* mTask = new Task();
 };   

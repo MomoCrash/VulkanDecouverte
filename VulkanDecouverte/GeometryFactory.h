@@ -32,7 +32,7 @@ public:
     [[nodiscard]] static MeshData* CreateCube(float width, float height, float depth);
     [[nodiscard]] static MeshData* CreatePlane(float width, float height);
 
-    static const inline wstring GEOMETRIES_FOLDER = L"geometries\\";
+    static const inline wstring GEOMETRIES_FOLDER = L"models\\";
 
 private :
 

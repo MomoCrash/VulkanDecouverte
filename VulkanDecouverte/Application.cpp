@@ -11,10 +11,6 @@ Application::~Application()
     // Cleanup
     vkDeviceWaitIdle(getInstance()->getDevice());
 
-    ImGui_ImplVulkan_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
     vkDestroyDevice(m_device, nullptr);
 
     if (getInstance()->useValidationLayer()) {
@@ -161,7 +157,8 @@ void Application::setupLogicalDevice(VkSurfaceKHR& surface)
     }
 
     VkPhysicalDeviceFeatures deviceFeatures{};
-
+    deviceFeatures.samplerAnisotropy = VK_TRUE;
+    
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 

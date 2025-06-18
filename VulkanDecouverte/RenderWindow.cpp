@@ -6,6 +6,8 @@
 #include "Mesh.h"
 #include "RenderObject.h"
 #include "RenderPipeline.h"
+#include "Sampler.h"
+#include "Texture.h"
 
 void* alignedAlloc(size_t size, size_t alignment)
 {
@@ -40,7 +42,7 @@ RenderWindow::RenderWindow(const char* name, const int width, const int height)
     Application::getInstance()->setupLogicalDevice(getSurface());
 
     Initialize();
-
+    
 }
 
 RenderWindow::~RenderWindow()
@@ -49,6 +51,9 @@ RenderWindow::~RenderWindow()
     delete m_renderTarget;
 
     cleanupSwapChain();
+
+    delete m_defaultSampler;
+    delete m_defaultTexture;
     
     vkDestroyRenderPass(*m_device, m_renderPass, nullptr);
 
@@ -96,12 +101,16 @@ void RenderWindow::Initialize()
     createUniformBuffers();
 
     createDescriptorPool();
+
+    m_defaultTexture = new Texture(*this, "sunflower.jpg");
+    m_defaultSampler = new Sampler();
     
     createDescriptorSets();
     
     createCommandBuffer();
 
     createSyncObjects();
+    
     
 }
 
@@ -205,28 +214,8 @@ void RenderWindow::createImageViews()
     m_swapChainImageViews.resize(m_swapChainImages.size());
 
     for (size_t i = 0; i < m_swapChainImages.size(); i++) {
-        VkImageViewCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        createInfo.image = m_swapChainImages[i];
 
-        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        createInfo.format = m_swapChainImageFormat;
-
-        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        createInfo.subresourceRange.baseMipLevel = 0;
-        createInfo.subresourceRange.levelCount = 1;
-        createInfo.subresourceRange.baseArrayLayer = 0;
-        createInfo.subresourceRange.layerCount = 1;
-
-        if (vkCreateImageView(*m_device, &createInfo, nullptr, &m_swapChainImageViews[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create image views!");
-        }
-        
+        m_swapChainImageViews[i] = createImageView(m_swapChainImages[i], m_swapChainImageFormat);
     }
 }
 
@@ -236,6 +225,7 @@ void RenderWindow::createDescriptorSetLayout()
     std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
         {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+        {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
     };
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
@@ -285,8 +275,6 @@ void RenderWindow::createCommandPool()
     if (vkCreateCommandPool(*m_device, &poolInfo, nullptr, &m_commandPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create command pool!");
     }
-
-    
     
 }
 
@@ -347,13 +335,14 @@ void RenderWindow::createDescriptorPool()
     std::vector<VkDescriptorPoolSize> poolSizes = {
         { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) },
         { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) },
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) },
     };
     
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) * static_cast<uint32_t>(poolSizes.size());
+    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
     if (vkCreateDescriptorPool(*m_device, &poolInfo, nullptr, &m_descriptorPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool!");
@@ -387,6 +376,11 @@ void RenderWindow::createDescriptorSets()
         dBufferInfo.offset = 0;
         dBufferInfo.range = dynamicAlignment;
 
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = m_defaultTexture->getImageView();
+        imageInfo.sampler = m_defaultSampler->getSampler();
+
         VkWriteDescriptorSet writeDescriptorSet {};
         writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         writeDescriptorSet.dstSet = m_descriptorSets[i];
@@ -403,9 +397,18 @@ void RenderWindow::createDescriptorSets()
         writeDynamicDescriptorSet.pBufferInfo = &dBufferInfo;
         writeDynamicDescriptorSet.descriptorCount = 1;
 
+        VkWriteDescriptorSet writeTextureDescriptorSet {};
+        writeTextureDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writeTextureDescriptorSet.dstSet = m_descriptorSets[i];
+        writeTextureDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        writeTextureDescriptorSet.dstBinding = 2;
+        writeTextureDescriptorSet.descriptorCount = 1;
+        writeTextureDescriptorSet.pImageInfo = &imageInfo;
+
         std::vector<VkWriteDescriptorSet> writeDescriptorSets = {
             writeDescriptorSet,
-            writeDynamicDescriptorSet
+            writeDynamicDescriptorSet,
+            writeTextureDescriptorSet
         };
 
         vkUpdateDescriptorSets(*m_device, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, nullptr);
@@ -472,6 +475,27 @@ void RenderWindow::recreateSwapchain()
     createSwapChain();
     createImageViews();
     createFramebuffers();
+}
+
+VkImageView RenderWindow::createImageView(VkImage image, VkFormat format)
+{
+    VkImageViewCreateInfo viewInfo{};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = image;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = format;
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+
+    VkImageView imageView;
+    if (vkCreateImageView(Application::getInstance()->getDevice(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create texture image view!");
+    }
+
+    return imageView;
 }
 
 VkSurfaceFormatKHR RenderWindow::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
@@ -563,12 +587,9 @@ uint32_t RenderWindow::flushCommand()
     return imageIndex;
 }
 
-void RenderWindow::createLogicalDevice()
+VkCommandBuffer RenderWindow::beginSingleTimeCommands()
 {
-}
 
-void RenderWindow::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
-{
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -584,12 +605,12 @@ void RenderWindow::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSi
 
     vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
-    VkBufferCopy copyRegion{};
-    copyRegion.srcOffset = 0; // Optional
-    copyRegion.dstOffset = 0; // Optional
-    copyRegion.size = size;
-    vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+    return commandBuffer;
+}
 
+void RenderWindow::endSingleTimeCommands(VkCommandBuffer commandBuffer)
+{
+    
     vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitInfo{};
@@ -601,6 +622,21 @@ void RenderWindow::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSi
     vkQueueWaitIdle(Application::getInstance()->getGraphicQueue());
 
     vkFreeCommandBuffers(*m_device, m_commandPool, 1, &commandBuffer);
+    
+}
+
+void RenderWindow::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+{
+
+    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+
+    VkBufferCopy copyRegion{};
+    copyRegion.srcOffset = 0; // Optional
+    copyRegion.dstOffset = 0; // Optional
+    copyRegion.size = size;
+    vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+    endSingleTimeCommands(commandBuffer);
     
 }
 

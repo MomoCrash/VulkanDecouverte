@@ -7,10 +7,20 @@ GuiHandler::GuiHandler() = default;
 
 GuiHandler::~GuiHandler()
 {
+	
+	ImGui_ImplVulkan_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	for (ImGuiContext* context : m_imguiContexts)
+	{
+		ImGui::SetCurrentContext(context);
+		ImGui::DestroyContext();
+	}
+
 	for (auto pool : m_imguiPools)
 	{
 		vkDestroyDescriptorPool(Application::getInstance()->getDevice(), pool, nullptr);
 	}
+	
 }
 
 int GuiHandler::inject(RenderWindow* window)

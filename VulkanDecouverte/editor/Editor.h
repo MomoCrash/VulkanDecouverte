@@ -1,8 +1,10 @@
 ﻿#pragma once
 
+#include "InspectorWindow.h"
 #include "../GuiHandler.h"
 #include "../RenderWindow.h"
 
+class Mesh;
 struct NodeEditor;
 
 class Editor final : public RenderWindow
@@ -14,6 +16,12 @@ public:
     void draw() override;
 
 private:
+    InspectorWindow m_inspectorWindow;
+    RenderObject* m_testObject;
+    Mesh* m_mesh;
+
+    VkDescriptorSet DS[2];
+    
     RenderPipeline* m_renderPipeline;
     NodeEditor*     m_nodeEditor;
 

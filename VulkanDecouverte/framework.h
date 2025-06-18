@@ -3,7 +3,6 @@
 #include "defines.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
-
 #include "libs/im_gui/imgui.h"
 #include "libs/im_gui/imgui_internal.h"
 #include "libs/im_gui/imgui_impl_glfw.h"

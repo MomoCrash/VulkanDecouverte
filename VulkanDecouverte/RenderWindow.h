@@ -8,21 +8,12 @@
 #include "Window.h"
 #include "RenderTarget.h"
 
+class Texture;
+class Sampler;
 class RenderPipeline;
 class RenderObject;
 
 class RenderWindow : public Window {
-
-	struct Texture {
-		VkSampler sampler{ VK_NULL_HANDLE };
-		VkImage image{ VK_NULL_HANDLE };
-		VkImageLayout imageLayout;
-		VkDeviceMemory deviceMemory{ VK_NULL_HANDLE };
-		VkImageView view{ VK_NULL_HANDLE };
-		uint32_t width{ 0 };
-		uint32_t height{ 0 };
-		uint32_t mipLevels{ 0 };
-	} texture;
 
 	struct UniformBufferObject {
 		mat4 view;
@@ -42,7 +33,6 @@ public:
 	void Initialize();
 	
 	void createSurface();
-	void createLogicalDevice();
 	void createSwapChain();
 	void createRenderPass();
 	void createImageViews();
@@ -57,6 +47,10 @@ public:
 	void createSyncObjects();
 	void recreateSwapchain();
 
+	VkImageView createImageView(VkImage image, VkFormat format);
+
+	VkCommandBuffer beginSingleTimeCommands();
+	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
 	VkExtent2D const& getExtent2D();
@@ -76,7 +70,7 @@ public:
 	bool shouldClose();
 	virtual void draw();
 
-private:
+protected:
 	// All of this come from an older version of the app when Application class don't exist now all of this is global context of window
 	// 	VkInstance m_instance; // Vulkan Global Instance
 	// 	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE; // Graphic Card Used
@@ -94,8 +88,10 @@ private:
 	// 	std::vector<const char*> getRequiredExtensions();
 	//  bool checkValidationSupport();
 
+	Texture* m_defaultTexture;
+	Sampler* m_defaultSampler;
+
 	// Reference to the device (Replace code on top)
-	
 	std::chrono::time_point<std::chrono::high_resolution_clock> lastTime;
 	uint32 frameCounter;
 	VkDevice const* m_device;
@@ -111,10 +107,8 @@ private:
 	
 	VkFormat m_swapChainImageFormat;
 	VkExtent2D m_swapChainExtent;
-
-	// Render pipeline (PSO)
-	RenderTarget* m_renderTarget;
 	
+	RenderTarget* m_renderTarget;
 	VkRenderPass m_renderPass;
 	
 	VkDescriptorSetLayout m_descriptorSetLayout;

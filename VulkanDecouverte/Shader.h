@@ -25,7 +25,7 @@ public:
     std::vector<char> readFile(const std::string& filename);
     VkPipelineShaderStageCreateInfo const& getShaderInformation();
 
-    static const inline string SHADER_FOLDER = "shaders\\";
+    static const inline char* SHADER_FOLDER = "res\\shaders\\";
 
 private:
     

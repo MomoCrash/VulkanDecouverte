@@ -1,6 +1,10 @@
+#define STB_IMAGE_IMPLEMENTATION
+#include "libs/stb_image.h"
+
 #include <Windows.h>
 
 #include "framework.h"
+
 #include "GeometryFactory.h"
 
 #include "RenderWindow.h"
@@ -29,6 +33,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
         editor.draw();
         
     }
+
+    vkDeviceWaitIdle(Application::getInstance()->getDevice());
     
     return 0;
     

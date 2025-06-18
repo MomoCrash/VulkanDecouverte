@@ -87,7 +87,7 @@ int GuiHandler::inject(RenderWindow* window)
 	init_info.Queue = Application::getInstance()->getGraphicQueue();
 	init_info.PipelineCache = nullptr;
 	init_info.DescriptorPool = m_imguiPools[index];
-	init_info.RenderPass = window->getRenderPass();
+	init_info.RenderPass = window->getRenderTarget()->getRenderPass();
 	init_info.Subpass = 0;
 	init_info.MinImageCount = 2;
 	init_info.ImageCount = window->MAX_FRAMES_IN_FLIGHT;

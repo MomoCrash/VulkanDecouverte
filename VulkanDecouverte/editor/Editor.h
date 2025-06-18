@@ -13,7 +13,7 @@ public:
     Editor(GuiHandler* guiHandler);
     ~Editor() override;
     
-    void draw() override;
+    void draw();
 
 private:
     InspectorWindow m_inspectorWindow;

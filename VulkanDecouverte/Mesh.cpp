@@ -1,5 +1,6 @@
 ﻿#include "Mesh.h"
 
+#include "Application.h"
 #include "RenderWindow.h"
 
 Vertex::Vertex(): position(0, 0, 0), normal(0, 0, 0), texCoords(0, 0) {}
@@ -31,7 +32,7 @@ Mesh::Mesh(RenderWindow& window, MeshData* dMesh) : m_vertexBuffer(nullptr)
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         m_vertexBuffer, m_vertexUploader, vSize);
 
-    window.copyBuffer(stagingBuffer, m_vertexBuffer, vSize);
+    window.getRenderContext()->copyBuffer(stagingBuffer, m_vertexBuffer, vSize);
 
     VkDeviceSize iSize = sizeof(dMesh->Indices[0]) * dMesh->Indices.size();
     
@@ -43,7 +44,7 @@ Mesh::Mesh(RenderWindow& window, MeshData* dMesh) : m_vertexBuffer(nullptr)
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         m_indexBuffer, m_indexBufferUploader, iSize);
 
-    window.copyBuffer(stagingBuffer, m_indexBuffer, iSize);
+    window.getRenderContext()->copyBuffer(stagingBuffer, m_indexBuffer, iSize);
 
     vkDestroyBuffer(Application::getInstance()->getDevice(), stagingBuffer, nullptr);
     vkFreeMemory(Application::getInstance()->getDevice(), stagingBufferMemory, nullptr);

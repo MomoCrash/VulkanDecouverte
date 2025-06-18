@@ -430,8 +430,58 @@ uint32_t Application::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags 
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
+VkFormat Application::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling,
+    VkFormatFeatureFlags features)
+{
+    for (VkFormat format : candidates) {
+        VkFormatProperties props;
+        vkGetPhysicalDeviceFormatProperties(getInstance()->getPhysicalDevice(), format, &props);
+
+        if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+            return format;
+        } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+            return format;
+        }
+    }
+
+    throw std::runtime_error("failed to find supported format!");
+    
+}
+
+VkFormat Application::findDepthFormat()
+{
+    return findSupportedFormat(
+        {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+        VK_IMAGE_TILING_OPTIMAL,
+        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+    );
+}
+
+size_t Application::getDynamicAlignment()
+{
+    size_t minUboAlignment = getInstance()->GetPhysicalDeviceProperties().limits.minUniformBufferOffsetAlignment;
+    size_t m_dynamicBufferAlignment = sizeof(mat4);
+    if (minUboAlignment > 0) {
+        m_dynamicBufferAlignment = (m_dynamicBufferAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
+    }
+    return m_dynamicBufferAlignment;
+}
+
+void* Application::alignedAlloc(size_t size, size_t alignment)
+{
+    void *data = nullptr;
+#if defined(_MSC_VER) || defined(__MINGW32__)
+    data = _aligned_malloc(size, alignment);
+#else
+    int res = posix_memalign(&data, alignment, size);
+    if (res != 0)
+        data = nullptr;
+#endif
+    return data;
+}
+
 void Application::createBuffer(VkBufferUsageFlags usages, VkMemoryPropertyFlags flags,
-    VkBuffer& buffer, VkDeviceMemory& uploader, uint64_t size)
+                               VkBuffer& buffer, VkDeviceMemory& uploader, uint64_t size)
 {
     
     VkBufferCreateInfo bufferInfo{};

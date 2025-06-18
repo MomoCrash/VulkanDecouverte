@@ -4,6 +4,14 @@
 
 class RenderWindow;
 
+struct ShaderStage
+{
+    uint32_t binding;
+    VkDescriptorType descriptor;
+    uint32_t descriptorCount;
+    VkShaderStageFlags stageFlag;
+};
+
 class Shader
 {
     
@@ -28,8 +36,10 @@ public:
     static const inline char* SHADER_FOLDER = "res\\shaders\\";
 
 private:
+
+    std::vector<ShaderStage> m_stages;
     
-    VkShaderModule mShaderModule;
-    VkPipelineShaderStageCreateInfo mPipelineShaderStageInfo;
+    VkShaderModule m_shaderModule;
+    VkPipelineShaderStageCreateInfo m_pipelineShaderStageInfo;
     
 };

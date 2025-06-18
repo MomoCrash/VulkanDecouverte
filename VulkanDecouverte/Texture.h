@@ -2,12 +2,14 @@
 #include <string>
 #include "framework.h"
 
+class RenderContext;
+class RenderTarget;
 class RenderWindow;
 
 class Texture
 {
 public:
-    Texture(RenderWindow& renderWindow, std::string const& textureFile);
+    Texture(RenderTarget& renderTarget, std::string const& textureFile);
     ~Texture();
 
     VkImageView& getImageView();
@@ -21,8 +23,8 @@ private:
     VkDeviceMemory m_textureImageMemory;
 
     void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
-    void createTextureImageView(RenderWindow& renderWindow);
+    void createTextureImageView(RenderTarget& renderWindow);
     
-    void transitionImageLayout(RenderWindow& renderWindow, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-    void copyBufferToImage(RenderWindow& renderWindow, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+    void transitionImageLayout(RenderContext& renderWindow, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+    void copyBufferToImage(RenderContext& renderWindow, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 };

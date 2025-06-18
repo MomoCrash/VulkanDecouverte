@@ -16,8 +16,11 @@ Editor::Editor(GuiHandler* guiHandler) : RenderWindow("SVE", 800, 800)
 
     Shader sFragment("frag.spv", Shader::FRAGMENT);
     Shader sVertex("vert.spv", Shader::VERTEX);
+
+    Texture* m_defaultTexture = new Texture(*m_renderTarget, "sunflower.jpg");
+    Sampler* m_defaultSampler = new Sampler();
     
-    m_renderPipeline = new RenderPipeline({ &sFragment, &sVertex}, *this);
+    m_renderPipeline = new RenderPipeline(*m_defaultTexture, *m_defaultSampler, *m_renderTarget, { &sFragment, &sVertex});
     
     m_nodeEditor = new NodeEditor(guiHandler);
     m_guiHandler = guiHandler;
@@ -178,7 +181,7 @@ void Editor::draw()
     ImGui::Render();
     ImDrawData* draw_data = ImGui::GetDrawData();
     
-    ImGui_ImplVulkan_RenderDrawData(draw_data, getCommandBuffer());
+    ImGui_ImplVulkan_RenderDrawData(draw_data, m_renderContext->getCommandBuffer(currentFrame));
 
     drawObject(*m_renderPipeline, *m_testObject);
 

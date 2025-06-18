@@ -3,10 +3,11 @@
 #include <stdexcept>
 
 #include "Application.h"
+#include "RenderContext.h"
 #include "RenderWindow.h"
 #include "libs/stb_image.h"
 
-Texture::Texture(RenderWindow& renderWindow, std::string const& textureFile)
+Texture::Texture(RenderTarget& context, std::string const& textureFile)
 {
     int texWidth, texHeight, texChannels;
     stbi_uc* pixels = stbi_load((TEXTURE_FOLDER + textureFile).c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
@@ -40,14 +41,14 @@ Texture::Texture(RenderWindow& renderWindow, std::string const& textureFile)
         );
 
 
-    transitionImageLayout(renderWindow, m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    copyBufferToImage(renderWindow, stagingBuffer, m_textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
-    transitionImageLayout(renderWindow, m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    transitionImageLayout(context.getRenderContext(), m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    copyBufferToImage(context.getRenderContext(), stagingBuffer, m_textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+    transitionImageLayout(context.getRenderContext(), m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     vkDestroyBuffer(Application::getInstance()->getDevice(), stagingBuffer, nullptr);
     vkFreeMemory(Application::getInstance()->getDevice(), stagingBufferMemory, nullptr);
 
-    createTextureImageView(renderWindow);
+    createTextureImageView(context);
     
 }
 
@@ -101,12 +102,12 @@ void Texture::createImage(uint32_t width, uint32_t height, VkFormat format, VkIm
     vkBindImageMemory(Application::getInstance()->getDevice(), image, imageMemory, 0);
 }
 
-void Texture::createTextureImageView(RenderWindow& renderWindow)
+void Texture::createTextureImageView(RenderTarget& renderWindow)
 {
     m_textureImageView = renderWindow.createImageView(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB);
 }
 
-void Texture::transitionImageLayout(RenderWindow& renderWindow, VkImage image, VkFormat format,
+void Texture::transitionImageLayout(RenderContext& renderWindow, VkImage image, VkFormat format,
     VkImageLayout oldLayout, VkImageLayout newLayout) {
     VkCommandBuffer commandBuffer = renderWindow.beginSingleTimeCommands();
 
@@ -154,7 +155,7 @@ void Texture::transitionImageLayout(RenderWindow& renderWindow, VkImage image, V
     renderWindow.endSingleTimeCommands(commandBuffer);
 }
 
-void Texture::copyBufferToImage(RenderWindow& renderWindow, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
+void Texture::copyBufferToImage(RenderContext& renderWindow, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
     VkCommandBuffer commandBuffer = renderWindow.beginSingleTimeCommands();
 
     VkBufferImageCopy region{};

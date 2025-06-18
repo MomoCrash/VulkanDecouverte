@@ -5,10 +5,40 @@
 #include "Application.h"
 #include "Mesh.h"
 #include "RenderWindow.h"
+#include "Sampler.h"
 #include "Shader.h"
+#include "Texture.h"
 
-RenderPipeline::RenderPipeline(std::vector<Shader*> shaders, RenderWindow& window)
+RenderPipeline::RenderPipeline(Texture& texture, Sampler& sampler, RenderTarget& target, std::vector<Shader*> shaders)
 {
+
+    std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+        {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+    };
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
+    layoutInfo.pBindings = setLayoutBindings.data();
+
+    if (vkCreateDescriptorSetLayout(Application::getInstance()->getDevice(), &layoutInfo, nullptr, &m_descriptorSetLayout) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor set layout!");
+    }
+    
+
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount = 1; // Optional
+    pipelineLayoutInfo.pSetLayouts = &m_descriptorSetLayout; // Optional
+    pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
+    pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+
+    VkResult result = vkCreatePipelineLayout(Application::getInstance()->getDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout);
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error("failed to create pipeline layout!");
+    }
 
     std::vector<VkPipelineShaderStageCreateInfo> infos;
 
@@ -125,8 +155,8 @@ RenderPipeline::RenderPipeline(std::vector<Shader*> shaders, RenderWindow& windo
     pipelineInfo.pDepthStencilState = &pipelineDepthStencilStateCreateInfo;
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = &dynamicState;
-    pipelineInfo.layout = window.getPipelineLayout();
-    pipelineInfo.renderPass = window.getRenderPass();
+    pipelineInfo.layout = m_pipelineLayout;
+    pipelineInfo.renderPass = target.getRenderPass();
     pipelineInfo.flags = 0;
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineIndex = -1;
@@ -136,16 +166,201 @@ RenderPipeline::RenderPipeline(std::vector<Shader*> shaders, RenderWindow& windo
                                   &pipelineInfo, nullptr, &m_graphicsPipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
+
+    createDescriptorPool();
+    createUniformBuffers();
+    createDescriptorSets(texture, sampler);
     
 }
 
 RenderPipeline::~RenderPipeline()
 {
+    
+    vkDestroyDescriptorSetLayout(Application::getInstance()->getDevice(), m_descriptorSetLayout, nullptr);
+    
+    vkDestroyPipelineLayout(Application::getInstance()->getDevice(), m_pipelineLayout, nullptr);
+
     vkDestroyPipelineCache(Application::getInstance()->getDevice(), m_pipelineCache, nullptr);
+    
     vkDestroyPipeline(Application::getInstance()->getDevice(), m_graphicsPipeline, nullptr);
+
+    vkDestroyDescriptorPool(Application::getInstance()->getDevice(), m_descriptorPool, nullptr);
+
+    for (size_t i = 0; i < RenderWindow::MAX_FRAMES_IN_FLIGHT; i++) {
+
+        // Buffers
+        vkDestroyBuffer(Application::getInstance()->getDevice(), m_uniformBuffers[i], nullptr);
+        vkFreeMemory(Application::getInstance()->getDevice(), m_uniformBuffersMemory[i], nullptr);
+
+        // Buffers
+        vkDestroyBuffer(Application::getInstance()->getDevice(), m_dynamicUniformBuffers[i], nullptr);
+        vkFreeMemory(Application::getInstance()->getDevice(), m_dynamicUniformBuffersMemory[i], nullptr);
+        
+    }
+    
 }
+
+void RenderPipeline::createDescriptorPool()
+{
+
+    std::vector<VkDescriptorPoolSize> poolSizes = {
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, static_cast<uint32_t>(RenderWindow::MAX_FRAMES_IN_FLIGHT) },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, static_cast<uint32_t>(RenderWindow::MAX_FRAMES_IN_FLIGHT) },
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, static_cast<uint32_t>(RenderWindow::MAX_FRAMES_IN_FLIGHT) },
+    };
+    
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+    poolInfo.pPoolSizes = poolSizes.data();
+    poolInfo.maxSets = static_cast<uint32_t>(RenderWindow::MAX_FRAMES_IN_FLIGHT);
+
+    if (vkCreateDescriptorPool(Application::getInstance()->getDevice(), &poolInfo, nullptr, &m_descriptorPool) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor pool!");
+    }
+}
+
+void RenderPipeline::createDescriptorSets(Texture& texture, Sampler& sampler)
+{
+    std::vector<VkDescriptorSetLayout> layouts(RenderWindow::MAX_FRAMES_IN_FLIGHT, m_descriptorSetLayout);
+    
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = m_descriptorPool;
+    allocInfo.pSetLayouts = layouts.data();
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(layouts.size());
+
+    m_descriptorSets.resize(RenderWindow::MAX_FRAMES_IN_FLIGHT);
+    if (vkAllocateDescriptorSets(Application::getInstance()->getDevice(),
+        &allocInfo, m_descriptorSets.data()) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate descriptor sets!");
+    }
+
+    for (size_t i = 0; i < RenderWindow::MAX_FRAMES_IN_FLIGHT; i++) {
+
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = m_uniformBuffers[i];
+        bufferInfo.offset = 0;
+        bufferInfo.range = sizeof(UniformBufferObject);
+
+        VkDescriptorBufferInfo dBufferInfo{};
+        dBufferInfo.buffer = m_dynamicUniformBuffers[i];
+        dBufferInfo.offset = 0;
+        dBufferInfo.range = Application::getDynamicAlignment();
+
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = texture.getImageView();
+        imageInfo.sampler   = sampler.getSampler();
+
+        VkWriteDescriptorSet writeDescriptorSet {};
+        writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writeDescriptorSet.dstSet = m_descriptorSets[i];
+        writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        writeDescriptorSet.dstBinding = 0;
+        writeDescriptorSet.pBufferInfo = &bufferInfo;
+        writeDescriptorSet.descriptorCount = 1;
+        
+        VkWriteDescriptorSet writeDynamicDescriptorSet {};
+        writeDynamicDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writeDynamicDescriptorSet.dstSet = m_descriptorSets[i];
+        writeDynamicDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+        writeDynamicDescriptorSet.dstBinding = 1;
+        writeDynamicDescriptorSet.pBufferInfo = &dBufferInfo;
+        writeDynamicDescriptorSet.descriptorCount = 1;
+
+        VkWriteDescriptorSet writeTextureDescriptorSet {};
+        writeTextureDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writeTextureDescriptorSet.dstSet = m_descriptorSets[i];
+        writeTextureDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        writeTextureDescriptorSet.dstBinding = 2;
+        writeTextureDescriptorSet.descriptorCount = 1;
+        writeTextureDescriptorSet.pImageInfo = &imageInfo;
+
+        std::vector<VkWriteDescriptorSet> writeDescriptorSets = {
+            writeDescriptorSet,
+            writeDynamicDescriptorSet,
+            writeTextureDescriptorSet
+        };
+
+        vkUpdateDescriptorSets(Application::getInstance()->getDevice(), static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, nullptr);
+        
+    }
+    
+}
+
+void RenderPipeline::createUniformBuffers()
+{
+    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+    m_uniformBuffers.resize(RenderWindow::MAX_FRAMES_IN_FLIGHT);
+    m_uniformBuffersMemory.resize(RenderWindow::MAX_FRAMES_IN_FLIGHT);
+    m_uniformBuffersMapped.resize(RenderWindow::MAX_FRAMES_IN_FLIGHT);
+
+    for (size_t i = 0; i < RenderWindow::MAX_FRAMES_IN_FLIGHT; i++) {
+        Application::getInstance()->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            m_uniformBuffers[i], m_uniformBuffersMemory[i], bufferSize);
+
+        vkMapMemory(Application::getInstance()->getDevice(), m_uniformBuffersMemory[i], 0, bufferSize, 0, &m_uniformBuffersMapped[i]);
+    }
+
+    std::cout << "minUniformBufferOffsetAlignment = " << Application::getDynamicAlignment() << std::endl;
+    std::cout << "dynamicAlignment = " << Application::getDynamicAlignment() << std::endl;
+
+    m_dynamicUniformBuffers.resize(RenderWindow::MAX_FRAMES_IN_FLIGHT);
+    m_dynamicUniformBuffersMemory.resize(RenderWindow::MAX_FRAMES_IN_FLIGHT);
+    m_dynamicUniformBuffersMapped.resize(RenderWindow::MAX_FRAMES_IN_FLIGHT);
+
+    size_t dBufferSize = MAX_OBJECT_RENDERER * Application::getDynamicAlignment();
+    for (size_t i = 0; i < RenderWindow::MAX_FRAMES_IN_FLIGHT; i++) {
+        Application::getInstance()->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+            m_dynamicUniformBuffers[i], m_dynamicUniformBuffersMemory[i], dBufferSize);
+
+        vkMapMemory(Application::getInstance()->getDevice(), m_dynamicUniformBuffersMemory[i], 0, dBufferSize, 0, &m_dynamicUniformBuffersMapped[i]);
+    }
+}
+
 
 VkPipeline& RenderPipeline::getGraphicsPipeline()
 {
     return m_graphicsPipeline;
+}
+
+VkPipelineLayout& RenderPipeline::getGraphicsPipelineLayout()
+{
+    return m_pipelineLayout;
+}
+
+VkDescriptorSetLayout& RenderPipeline::GetDescriptorSetLayout()
+{
+    return m_descriptorSetLayout;
+}
+
+VkDescriptorSet& RenderPipeline::GetDescriptorSets(uint32_t frame)
+{
+    return m_descriptorSets[frame];
+}
+
+void* RenderPipeline::GetUniformBuffer(uint32_t frame)
+{
+    return m_uniformBuffersMapped[frame];
+}
+
+void* RenderPipeline::GetDynamicBuffer(uint32_t frame)
+{
+    return m_dynamicUniformBuffersMapped[frame];
+}
+
+void RenderPipeline::Update(UniformBufferObject& buffer, uint32_t frame)
+{
+    
+    memcpy(m_uniformBuffersMapped[frame], &buffer, sizeof(buffer));
+    
+}
+
+void RenderPipeline::UpdatePerObject(UboDataDynamic* buffer, uint32_t frame)
+{
+    memcpy(m_dynamicUniformBuffersMapped[frame], buffer->model, MAX_OBJECT_RENDERER * Application::getDynamicAlignment());
 }

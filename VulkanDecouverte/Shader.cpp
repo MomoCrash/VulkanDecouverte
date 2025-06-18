@@ -2,6 +2,7 @@
 
 #include <fstream>
 
+#include "Application.h"
 #include "Mesh.h"
 #include "RenderWindow.h"
 
@@ -15,22 +16,21 @@ Shader::Shader(std::string shaderPath, Type shaderType)
     createInfo.codeSize = shaderCode.size();
     createInfo.pCode = reinterpret_cast<const uint32_t*>(shaderCode.data());
     
-    if (vkCreateShaderModule(Application::getInstance()->getDevice(), &createInfo, nullptr, &mShaderModule) != VK_SUCCESS) {
+    if (vkCreateShaderModule(Application::getInstance()->getDevice(), &createInfo, nullptr, &m_shaderModule) != VK_SUCCESS) {
         throw std::runtime_error("failed to create shader module!");
     }
     
-    mPipelineShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    mPipelineShaderStageInfo.stage = static_cast<VkShaderStageFlagBits>(shaderType);
-    mPipelineShaderStageInfo.module = mShaderModule;
-    mPipelineShaderStageInfo.pName = "main";
-    
+    m_pipelineShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    m_pipelineShaderStageInfo.stage = static_cast<VkShaderStageFlagBits>(shaderType);
+    m_pipelineShaderStageInfo.module = m_shaderModule;
+    m_pipelineShaderStageInfo.pName = "main";
     
 }
 
 Shader::~Shader()
 {
     
-    vkDestroyShaderModule(Application::getInstance()->getDevice(), mShaderModule, nullptr);
+    vkDestroyShaderModule(Application::getInstance()->getDevice(), m_shaderModule, nullptr);
     
 }
 
@@ -55,5 +55,5 @@ std::vector<char> Shader::readFile(const std::string& filename)
 
 VkPipelineShaderStageCreateInfo const& Shader::getShaderInformation()
 {
-    return mPipelineShaderStageInfo;
+    return m_pipelineShaderStageInfo;
 }

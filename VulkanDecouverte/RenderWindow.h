@@ -3,10 +3,10 @@
 #include <chrono>
 
 #include "framework.h"
-
-#include "Application.h"
-#include "Window.h"
+#include "RenderPipeline.h"
 #include "RenderTarget.h"
+
+#include "Window.h"
 
 class Texture;
 class Sampler;
@@ -15,90 +15,55 @@ class RenderObject;
 
 class RenderWindow : public Window {
 
-	struct UniformBufferObject {
-		mat4 view;
-		mat4 proj;
-	} ubo;
-
-	struct UboDataDynamic {
-		mat4* model{ nullptr };
-	} dynamicUbo;
-
 public:
-	const int MAX_FRAMES_IN_FLIGHT = 2;
+	static const int MAX_FRAMES_IN_FLIGHT = 2;
 
 	RenderWindow(const char* windowTitle, int width, int height);
 	~RenderWindow();
-
-	void Initialize();
 	
 	void createSurface();
 	void createSwapChain();
-	void createRenderPass();
 	void createImageViews();
-	void createDescriptorSetLayout();
 	void createFramebuffers();
-	void createCommandPool();
 	void createDepthResources();
-	void createUniformBuffers();
-	void createDescriptorPool();
-	void createDescriptorSets();
-	void createCommandBuffer();
 	void createSyncObjects();
 	void recreateSwapchain();
-
-	VkImageView createImageView(VkImage image, VkFormat format);
-
-	VkCommandBuffer beginSingleTimeCommands();
-	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
-	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-
+	
 	VkExtent2D const& getExtent2D();
-	VkRenderPass const& getRenderPass();
-	VkDescriptorSetLayout& getDescriptorLayout();
-	VkCommandBuffer const& getCommandBuffer();
 	VkSurfaceKHR& getSurface();
 
-	VkPipelineLayout& getPipelineLayout();
+	RenderTarget* getRenderTarget();
+	RenderContext* getRenderContext();
+	uint32_t getCurrentFrame();
 
 	void update();
-	
+
 	void clear();
+	
 	void drawObject(RenderPipeline& pipeline, RenderObject& object);
+	
 	void display();
 
 	bool shouldClose();
-	virtual void draw();
 
 protected:
-	// All of this come from an older version of the app when Application class don't exist now all of this is global context of window
-	// 	VkInstance m_instance; // Vulkan Global Instance
-	// 	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE; // Graphic Card Used
-	//
-	// 	VkDebugUtilsMessengerEXT m_debugMessenger; // Debugger
-	//
-	// #ifdef NDEBUG
-	// 	bool m_enableValidationLayers = false;
-	// #else
-	// 	bool m_enableValidationLayers = true;
-	// #endif
-	//
-	// 	bool rateDeviceSuitability(VkPhysicalDevice device);
-	// 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
-	// 	std::vector<const char*> getRequiredExtensions();
-	//  bool checkValidationSupport();
-
-	Texture* m_defaultTexture;
-	Sampler* m_defaultSampler;
-
-	// Reference to the device (Replace code on top)
+	// Reference to device
+	VkDevice const* m_device;
+	
+	// Use for frame tracking
 	std::chrono::time_point<std::chrono::high_resolution_clock> lastTime;
 	uint32 frameCounter;
-	VkDevice const* m_device;
 
 	// Main device element
 	VkSurfaceKHR m_surface;
 
+	RenderTarget* m_renderTarget;
+	RenderContext* m_renderContext;
+
+	UniformBufferObject m_globalBuffer;
+	UboDataDynamic m_perObjectBuffer;
+
+	
 	// Swapchain datas
 	VkSwapchainKHR m_swapchain;
 	std::vector<VkImage> m_swapChainImages;
@@ -107,17 +72,6 @@ protected:
 	
 	VkFormat m_swapChainImageFormat;
 	VkExtent2D m_swapChainExtent;
-	
-	RenderTarget* m_renderTarget;
-	VkRenderPass m_renderPass;
-	
-	VkDescriptorSetLayout m_descriptorSetLayout;
-	VkDescriptorPool m_descriptorPool;
-	std::vector<VkDescriptorSet> m_descriptorSets;
-	
-	// Command list
-	VkCommandPool m_commandPool;
-	std::vector<VkCommandBuffer> m_commandBuffers;
 
 	// Synchronization objects
 	uint32_t currentFrame = 0;
@@ -127,19 +81,8 @@ protected:
 	std::vector<VkFence> m_inFlightFences;
 
 	// Constant buffers
-
-	size_t dynamicAlignment{ 0 };
 	uint currentObject;
 	
-	std::vector<VkBuffer>		m_uniformBuffers;
-	std::vector<VkDeviceMemory> m_uniformBuffersMemory;
-	std::vector<void*>			m_uniformBuffersMapped;
-
-	std::vector<VkBuffer>		m_dynamicUniformBuffers;
-	std::vector<VkDeviceMemory> m_dynamicUniformBuffersMemory;
-	std::vector<void*>			m_dynamicUniformBuffersMapped;
-	
-
 	VkClearValue m_clearColor = { {{0.0f, 0.2f, 0.0f, 1.0f}} };
 
 	// Need this because some drivers don't call resize
@@ -149,9 +92,7 @@ protected:
 	VkRect2D m_scissor;
 	
 	vec3 position = vec3(0.0f, 0.0f, -3.0f);
-
-	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-	VkFormat findDepthFormat();
+	
 	bool hasStencilComponent(VkFormat format);
 	
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);

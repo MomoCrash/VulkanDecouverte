@@ -1,5 +1,6 @@
 ﻿#include "Editor.h"
 
+#include "../Application.h"
 #include "../GeometryFactory.h"
 #include "../Mesh.h"
 #include "../RenderObject.h"
@@ -9,16 +10,23 @@
 #include "../Texture.h"
 #include "../nodes/NodeEditor.h"
 
-Editor::Editor(GuiHandler* guiHandler) : RenderWindow("SVE", 800, 800)
+Editor::Editor(GuiHandler* guiHandler)
 {
-        
-    m_mainWindowContext = guiHandler->inject(this);
+
+    m_renderWindow = new RenderWindow("SVE", 800, 800);
+    m_mainWindowContext = guiHandler->inject(m_renderWindow);
 
     Shader sFragment("frag.spv", Shader::FRAGMENT);
     Shader sVertex("vert.spv", Shader::VERTEX);
 
-    Texture* m_defaultTexture = new Texture(*m_renderTarget, "sunflower.jpg");
-    Sampler* m_defaultSampler = new Sampler();
+    VkFormat format = Application::getInstance()->findSupportedFormat( {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+        VK_IMAGE_TILING_OPTIMAL,
+        VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT );
+    
+    m_renderScene = new RenderTarget(format, 100, 100);
+
+    m_defaultTexture = new Texture(*m_renderScene, "sunflower.jpg");
+    m_defaultSampler = new Sampler();
     
     m_renderPipeline = new RenderPipeline(*m_defaultTexture, *m_defaultSampler, *m_renderTarget, { &sFragment, &sVertex});
     
@@ -30,16 +38,22 @@ Editor::Editor(GuiHandler* guiHandler) : RenderWindow("SVE", 800, 800)
 
     m_inspectorWindow.setInspectedObject(m_testObject);
 
-    DS[0] = ImGui_ImplVulkan_AddTexture(m_defaultSampler->getSampler(), m_defaultTexture->getImageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    DS[1] = ImGui_ImplVulkan_AddTexture(m_defaultSampler->getSampler(), m_defaultTexture->getImageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    renderedImages[0] = ImGui_ImplVulkan_AddTexture(m_defaultSampler->getSampler(), m_defaultTexture->getImageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    renderedImages[1] = ImGui_ImplVulkan_AddTexture(m_defaultSampler->getSampler(), m_defaultTexture->getImageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     
 }
 
 Editor::~Editor()
 {
     delete m_mesh;
-    delete m_renderPipeline;
+    delete m_testObject;
+    
+    delete m_defaultSampler;
+    delete m_defaultTexture;
+    
     delete m_nodeEditor;
+    
+    delete m_renderPipeline;
 }
 
 void Editor::draw()
@@ -171,7 +185,7 @@ void Editor::draw()
         ImGui::End();
 
         ImGui::Begin("Image");
-        ImGui::Image((ImTextureID)DS[0], ImGui::GetWindowSize());
+        ImGui::Image((ImTextureID)renderedImages[currentFrame], ImGui::GetWindowSize());
         ImGui::End();
         
     }

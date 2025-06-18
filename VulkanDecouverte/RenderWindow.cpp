@@ -322,7 +322,8 @@ RenderTarget* RenderWindow::getRenderTarget()
 
 void RenderWindow::clear()
 {
-    
+
+    flushCommand();
     VkCommandBuffer& buffer = m_renderContext->getCommandBuffer(currentFrame);
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
